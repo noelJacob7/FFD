@@ -1,7 +1,7 @@
 import flwr as fl
 import numpy as np
 import sys
-from model import create_model
+from model import create_model, evaluate_thresholds
 from sklearn.metrics import (
     accuracy_score,
     precision_score,
@@ -47,7 +47,7 @@ class FraudClient(fl.client.NumPyClient):
 
         # Evaluate locally
         y_probs = model.predict(X_train, verbose=0).ravel()
-        threshold = 0.83
+        threshold = evaluate_thresholds(y_probs, y_train)
 
         y_pred = (y_probs > threshold).astype(int)
 

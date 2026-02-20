@@ -58,6 +58,25 @@ class ApiService {
     return 'Offline: Server failed to respond after $retries attempts';
   }
   
+  Future<Map<String, dynamic>> getTrainingMetrics() async {
+    try {
+      final response = await http
+          .get(Uri.parse('$_baseUrl/training_metrics'))
+          .timeout(const Duration(seconds: 2));
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        AppLogger.logFlask('Failed to fetch metrics: ${response.statusCode}');
+        return {'error': 'Failed to fetch metrics'};
+      }
+    } catch (e) {
+      AppLogger.logFlask('getTrainingMetrics error: $e');
+      return {'error': e.toString()};
+    }
+  }
+
+  
   Future<void> stopServer() async {
     _process?.kill();
     _process = null;

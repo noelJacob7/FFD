@@ -1,6 +1,5 @@
 import flwr as fl
 import numpy as np
-from tensorflow import keras
 from keras.models import load_model
 from sklearn.metrics import (
     accuracy_score,
@@ -10,6 +9,7 @@ from sklearn.metrics import (
     average_precision_score,
 )
 from model import evaluate_thresholds
+import requests
 
 # Load pretrained centralized model
 try:
@@ -23,8 +23,8 @@ initial_weights = model.get_weights()
 initial_parameters = fl.common.ndarrays_to_parameters(initial_weights)
 
 
-class SaveBestPRStrategy(fl.server.strategy.FedAvg):
 
+class SaveBestPRStrategy(fl.server.strategy.FedAvg):
     def __init__(self, model, X_test, y_test, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.model = model
@@ -61,13 +61,28 @@ class SaveBestPRStrategy(fl.server.strategy.FedAvg):
         f1 = f1_score(self.y_test, y_pred)
         pr_auc = average_precision_score(self.y_test, y_probs)
 
-        print(f"\n=== GLOBAL METRICS - ROUND {server_round} ===")
+        print(f"\n==== GLOBAL METRICS - ROUND {server_round} ====")
         print(f"Accuracy:  {accuracy:.6f}")
         print(f"Precision: {precision:.6f}")
         print(f"Recall:    {recall:.6f}")
         print(f"F1 Score:  {f1:.6f}")
         print(f"PR-AUC:    {pr_auc:.6f}")
         print("====================================\n")
+
+        # Update metrices dictionary
+        try:
+            payload = {
+                "round": server_round,
+                "accuracy": float(accuracy),
+                "precision": float(precision),
+                "recall": float(recall),
+                "f1_score": float(f1),
+                "pr_auc": float(pr_auc)
+            }
+            # Sending to your existing Flask app running on 5000
+            requests.post("http://localhost:5000/update_metrics", json=payload, timeout=2)
+        except Exception as e:
+            print(f"Flask update failed (is the API running?): {e}")
 
         if pr_auc > self.best_prauc:
             self.best_prauc = pr_auc
