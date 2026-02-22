@@ -23,7 +23,6 @@ initial_weights = model.get_weights()
 initial_parameters = fl.common.ndarrays_to_parameters(initial_weights)
 
 
-
 class SaveBestPRStrategy(fl.server.strategy.FedAvg):
     def __init__(self, model, X_test, y_test, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -55,18 +54,18 @@ class SaveBestPRStrategy(fl.server.strategy.FedAvg):
         y_pred = (y_probs > threshold).astype(int)
 
         # Compute metrics
-        accuracy = accuracy_score(self.y_test, y_pred)
-        precision = precision_score(self.y_test, y_pred, zero_division=0)
-        recall = recall_score(self.y_test, y_pred)
-        f1 = f1_score(self.y_test, y_pred)
-        pr_auc = average_precision_score(self.y_test, y_probs)
+        accuracy = round(accuracy_score(self.y_test, y_pred), 6)
+        precision = round(precision_score(self.y_test, y_pred, zero_division=0), 6)
+        recall = round(recall_score(self.y_test, y_pred), 6)
+        f1 = round(f1_score(self.y_test, y_pred), 6)
+        pr_auc = round(average_precision_score(self.y_test, y_probs), 6)
 
         print(f"\n==== GLOBAL METRICS - ROUND {server_round} ====")
-        print(f"Accuracy:  {accuracy:.6f}")
-        print(f"Precision: {precision:.6f}")
-        print(f"Recall:    {recall:.6f}")
-        print(f"F1 Score:  {f1:.6f}")
-        print(f"PR-AUC:    {pr_auc:.6f}")
+        print(f"Accuracy:  {accuracy}")
+        print(f"Precision: {precision}")
+        print(f"Recall:    {recall}")
+        print(f"F1 Score:  {f1}")
+        print(f"PR-AUC:    {pr_auc}")
         print("====================================\n")
 
         # Update metrices dictionary
@@ -77,10 +76,12 @@ class SaveBestPRStrategy(fl.server.strategy.FedAvg):
                 "precision": float(precision),
                 "recall": float(recall),
                 "f1_score": float(f1),
-                "pr_auc": float(pr_auc)
+                "pr_auc": float(pr_auc),
             }
             # Sending to your existing Flask app running on 5000
-            requests.post("http://localhost:5000/update_metrics", json=payload, timeout=2)
+            requests.post(
+                "http://localhost:5000/update_metrics", json=payload, timeout=2
+            )
         except Exception as e:
             print(f"Flask update failed (is the API running?): {e}")
 

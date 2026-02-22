@@ -56,7 +56,7 @@ class _FlowerLoggerState extends State<FlowerLogger>
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: SizedBox(
-                height: 240,
+                height: 450,
                 child: ConsoleWidget(logStream: AppLogger.flowerStream),
               ),
             ),

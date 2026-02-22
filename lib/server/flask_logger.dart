@@ -77,7 +77,7 @@ class _FlaskLoggerState extends State<FlaskLogger> with AutomaticKeepAliveClient
             // Terminal area
             Padding(
               padding: const EdgeInsets.all(8.0),
-              child: SizedBox(height: 240, child: ConsoleWidget(logStream: AppLogger.flaskStream)),
+              child: SizedBox(height: 450, child: ConsoleWidget(logStream: AppLogger.flaskStream)),
             ),
           ],
         ),
