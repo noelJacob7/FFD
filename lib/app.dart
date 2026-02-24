@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../server/global_logger.dart';
 import '../server/training.dart';
 import 'server/detection.dart';
+import 'server/evaluation.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key, required this.title});
@@ -17,8 +18,9 @@ class _HomePageState extends State<HomePage> {
   final List<String> _pageTitles = [
     'Fraud App Home',
     'Global Console',
-    'Training Page',
+    'Training',
     'Fraud Detection',
+    'Evaluation',
   ];
 
   final List<Widget> _widgetOptions = <Widget>[
@@ -28,6 +30,7 @@ class _HomePageState extends State<HomePage> {
     const GlobalLogger(),
     const TrainingPage(),
     const DetectionPage(),
+    const EvaluationPage(),
   ];
 
   void _onItemTapped(int index) {
@@ -76,7 +79,7 @@ class _HomePageState extends State<HomePage> {
             ),
             ListTile(
               leading: const Icon(Icons.model_training),
-              title: const Text('Training Page'),
+              title: const Text('Training'),
               selected: _selectedIndex == 2,
               onTap: () {
                 _onItemTapped(2);
@@ -92,6 +95,15 @@ class _HomePageState extends State<HomePage> {
                 Navigator.pop(context);
               },
             ),
+            ListTile(
+              leading: const Icon(Icons.analytics),
+              title: const Text('Evaluation'),
+              selected: _selectedIndex == 4,
+              onTap: () {
+                _onItemTapped(4);
+                Navigator.pop(context);
+              },
+            ),  
           ],
         ),
       ),

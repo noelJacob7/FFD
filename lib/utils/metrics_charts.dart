@@ -3,7 +3,11 @@ import 'package:fl_chart/fl_chart.dart';
 
 class MetricsCharts {
   // 1. Helper to create consistent line styling
-  static LineChartBarData createBarData(List<FlSpot> spots, Color color, bool isAllSelected) {
+  static LineChartBarData createBarData(
+    List<FlSpot> spots,
+    Color color,
+    bool isAllSelected,
+  ) {
     return LineChartBarData(
       spots: spots,
       isCurved: false,
@@ -18,7 +22,12 @@ class MetricsCharts {
   }
 
   // 2. The Main Chart Builder (For Accuracy/PR-AUC)
-  static Widget buildChart(String title, List<FlSpot> spots, int numRounds, Color color) {
+  static Widget buildChart(
+    String title,
+    List<FlSpot> spots,
+    int numRounds,
+    Color color,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -31,7 +40,10 @@ class MetricsCharts {
             height: 350,
             child: LineChart(
               LineChartData(
-                minX: 1, maxX: numRounds.toDouble(), minY: 0, maxY: 1.0,
+                minX: 1,
+                maxX: numRounds.toDouble(),
+                minY: 0,
+                maxY: 1.0,
                 gridData: _getGridData(),
                 borderData: _getBorderData(),
                 titlesData: _getTitlesData(),
@@ -40,14 +52,25 @@ class MetricsCharts {
             ),
           ),
           const SizedBox(height: 12),
-          Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white70)),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.white70,
+            ),
+          ),
         ],
       ),
     );
   }
 
   // 3. The Combined Chart Builder (For the Selector)
-  static Widget buildCombinedChart(int numRounds, String selectedSegment, Map<String, List<FlSpot>> otherMetrics) {
+  static Widget buildCombinedChart(
+    int numRounds,
+    String selectedSegment,
+    Map<String, List<FlSpot>> otherMetrics,
+  ) {
     List<LineChartBarData> linesToShow = [];
     bool isAll = selectedSegment == 'All';
 
@@ -58,8 +81,12 @@ class MetricsCharts {
         createBarData(otherMetrics["F1 Score"]!, Colors.pinkAccent, true),
       ];
     } else {
-      Color color = selectedSegment == "Precision" ? Colors.orange : (selectedSegment == "Recall" ? Colors.purple : Colors.pinkAccent);
-      linesToShow = [createBarData(otherMetrics[selectedSegment]!, color, false)];
+      Color color = selectedSegment == "Precision"
+          ? Colors.orange
+          : (selectedSegment == "Recall" ? Colors.purple : Colors.pinkAccent);
+      linesToShow = [
+        createBarData(otherMetrics[selectedSegment]!, color, false),
+      ];
     }
 
     return Container(
@@ -75,19 +102,31 @@ class MetricsCharts {
             height: 250,
             child: LineChart(
               LineChartData(
-                minX: 1, maxX: numRounds.toDouble(), minY: 0, maxY: 1.0,
+                minX: 1,
+                maxX: numRounds.toDouble(),
+                minY: 0,
+                maxY: 1.0,
                 gridData: _getGridData(),
                 borderData: _getBorderData(),
                 titlesData: _getTitlesData(),
                 lineBarsData: linesToShow,
                 lineTouchData: LineTouchData(
-                  touchTooltipData: LineTouchTooltipData(getTooltipColor: (spot) => Colors.blueGrey[900]!),
+                  touchTooltipData: LineTouchTooltipData(
+                    getTooltipColor: (spot) => Colors.blueGrey[900]!,
+                  ),
                 ),
               ),
             ),
           ),
           const SizedBox(height: 12),
-          Text(selectedSegment, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white70)),
+          Text(
+            selectedSegment,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.white70,
+            ),
+          ),
           buildLegend(selectedSegment),
         ],
       ),
@@ -98,11 +137,14 @@ class MetricsCharts {
 
   static FlGridData _getGridData() => FlGridData(
     show: true,
-    getDrawingHorizontalLine: (val) => FlLine(color: Colors.white10, strokeWidth: 1),
-    getDrawingVerticalLine: (val) => FlLine(color: Colors.white10, strokeWidth: 1),
+    getDrawingHorizontalLine: (val) =>
+        FlLine(color: Colors.white10, strokeWidth: 1),
+    getDrawingVerticalLine: (val) =>
+        FlLine(color: Colors.white10, strokeWidth: 1),
   );
 
-  static FlBorderData _getBorderData() => FlBorderData(show: true, border: Border.all(color: Colors.white24));
+  static FlBorderData _getBorderData() =>
+      FlBorderData(show: true, border: Border.all(color: Colors.white24));
 
   static FlTitlesData _getTitlesData() => FlTitlesData(
     show: true,
@@ -110,14 +152,29 @@ class MetricsCharts {
     topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
     leftTitles: AxisTitles(
       sideTitles: SideTitles(
-        showTitles: true, interval: 0.1, reservedSize: 25,
-        getTitlesWidget: (val, meta) => SideTitleWidget(meta: meta, child: Text(val.toStringAsFixed(1), style: const TextStyle(color: Colors.white70, fontSize: 10))),
+        showTitles: true,
+        interval: 0.1,
+        reservedSize: 25,
+        getTitlesWidget: (val, meta) => SideTitleWidget(
+          meta: meta,
+          child: Text(
+            val.toStringAsFixed(1),
+            style: const TextStyle(color: Colors.white70, fontSize: 10),
+          ),
+        ),
       ),
     ),
     bottomTitles: AxisTitles(
       sideTitles: SideTitles(
-        showTitles: true, interval: 1,
-        getTitlesWidget: (val, meta) => SideTitleWidget(meta: meta, child: Text(val.toInt().toString(), style: const TextStyle(color: Colors.white70, fontSize: 10))),
+        showTitles: true,
+        interval: 1,
+        getTitlesWidget: (val, meta) => SideTitleWidget(
+          meta: meta,
+          child: Text(
+            val.toInt().toString(),
+            style: const TextStyle(color: Colors.white70, fontSize: 10),
+          ),
+        ),
       ),
     ),
   );
@@ -128,9 +185,21 @@ class MetricsCharts {
       runSpacing: 10,
       alignment: WrapAlignment.center,
       children: [
-        _legendItem("Recall", Colors.purple, selectedSegment == 'All' || selectedSegment == 'Recall'),
-        _legendItem("Precision", Colors.orange, selectedSegment == 'All' || selectedSegment == 'Precision'),
-        _legendItem("F1 Score", Colors.pinkAccent, selectedSegment == 'All' || selectedSegment == 'F1 Score'),
+        _legendItem(
+          "Recall",
+          Colors.purple,
+          selectedSegment == 'All' || selectedSegment == 'Recall',
+        ),
+        _legendItem(
+          "Precision",
+          Colors.orange,
+          selectedSegment == 'All' || selectedSegment == 'Precision',
+        ),
+        _legendItem(
+          "F1 Score",
+          Colors.pinkAccent,
+          selectedSegment == 'All' || selectedSegment == 'F1 Score',
+        ),
       ],
     );
   }
@@ -141,10 +210,92 @@ class MetricsCharts {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(width: 12, height: 12, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+          Container(
+            width: 12,
+            height: 12,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
           const SizedBox(width: 8),
-          Text(label, style: TextStyle(color: isActive ? Colors.white : Colors.white24, fontSize: 13)),
+          Text(
+            label,
+            style: TextStyle(
+              color: isActive ? Colors.white : Colors.white24,
+              fontSize: 13,
+            ),
+          ),
         ],
+      ),
+    );
+  }
+
+  static Widget buildModelSummaryChart(
+    Map<String, double> metrics,
+    Color barColor,
+  ) {
+    return SizedBox(
+      height: 250,
+      child: BarChart(
+        BarChartData(
+          maxY: 1.0,
+          minY: 0,
+          gridData: const FlGridData(show: false),
+          borderData: FlBorderData(show: false),
+          titlesData: FlTitlesData(
+            leftTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            topTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            rightTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                getTitlesWidget: (value, meta) {
+                  const titles = ["Acc", "Prec", "Rec", "F1"];
+                  // Boundary check to prevent index out of bounds errors
+                  if (value.toInt() < 0 || value.toInt() >= titles.length) {
+                    return const SizedBox.shrink();
+                  }
+                  return SideTitleWidget(
+                    meta: meta, // This handles the axisSide internally
+                    child: Text(
+                      titles[value.toInt()],
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: Colors.white60,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+          barGroups: metrics.entries.toList().asMap().entries.map((entry) {
+            // entry.value is a MapEntry<String, double>
+            final double metricValue = entry.value.value;
+
+            return BarChartGroupData(
+              x: entry.key,
+              barRods: [
+                BarChartRodData(
+                  toY: metricValue,
+                  color: barColor,
+                  width: 18,
+                  borderRadius: BorderRadius.circular(4),
+                  // Correct property and class name
+                  backDrawRodData: BackgroundBarChartRodData(
+                    show: true,
+                    toY: 1.0,
+                    color: Colors.white.withValues(alpha: 0.05),
+                  ),
+                ),
+              ],
+            );
+          }).toList(),
+        ),
       ),
     );
   }

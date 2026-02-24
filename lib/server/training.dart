@@ -188,7 +188,7 @@ class _TrainingPageState extends State<TrainingPage> {
                   Expanded(child: Text("Training status: $_status")),
                   ElevatedButton(
                     onPressed: _startTraining,
-                    child: const Text("Start Training"),
+                    child: const Text("Start Data fetch"),
                   ),
                   SizedBox(width: 8),
                   ElevatedButton(

@@ -6,14 +6,15 @@ from sklearn.metrics import (
     precision_score,
     recall_score,
     f1_score,
-    average_precision_score,
+    precision_recall_curve,
+    auc,
 )
 from model import evaluate_thresholds
 import requests
 
 # Load pretrained centralized model
 try:
-    model = load_model("model/initial_lstm_model.keras")
+    model = load_model("models/initial_lstm_model.keras")
 except Exception as e:
     print(f"Error loading model: {e}")
     exit(1)
@@ -58,7 +59,8 @@ class SaveBestPRStrategy(fl.server.strategy.FedAvg):
         precision = round(precision_score(self.y_test, y_pred, zero_division=0), 6)
         recall = round(recall_score(self.y_test, y_pred), 6)
         f1 = round(f1_score(self.y_test, y_pred), 6)
-        pr_auc = round(average_precision_score(self.y_test, y_probs), 6)
+        precision_vals, recall_vals, _ = precision_recall_curve(self.y_test, y_probs)
+        pr_auc = round(auc(recall_vals, precision_vals), 6)
 
         print(f"\n==== GLOBAL METRICS - ROUND {server_round} ====")
         print(f"Accuracy:  {accuracy}")
@@ -87,8 +89,13 @@ class SaveBestPRStrategy(fl.server.strategy.FedAvg):
 
         if pr_auc > self.best_prauc:
             self.best_prauc = pr_auc
-            self.model.save("best_federated_model.keras")
+            self.model.save("models/best_federated_model.keras")
             print("Saved new best model")
+            requests.post(
+                "http://localhost:5000/update_threshold",
+                json={"threshold": threshold},
+                timeout=2,
+            )
         return aggregated_parameters, aggregated_metrics
 
 
