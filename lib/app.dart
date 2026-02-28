@@ -5,8 +5,7 @@ import 'server/detection.dart';
 import 'server/evaluation.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key, required this.title});
-  final String title;
+  const HomePage({super.key});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -20,7 +19,7 @@ class _HomePageState extends State<HomePage> {
     'Global Console',
     'Training',
     'Fraud Detection',
-    'Evaluation',
+    'Model Evaluation',
   ];
 
   final List<Widget> _widgetOptions = <Widget>[

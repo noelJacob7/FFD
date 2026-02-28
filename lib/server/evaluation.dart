@@ -16,8 +16,8 @@ class _EvaluationPageState extends State<EvaluationPage> {
   final SearchController _controller2 = SearchController();
   final ApiService _apiService = ApiService();
 
-  String? _model1;
-  String? _model2;
+  String? model1;
+  String? model2;
   bool _isEvaluating = false;
   bool _showResults = false;
 
@@ -34,8 +34,8 @@ class _EvaluationPageState extends State<EvaluationPage> {
     try {
       // 1. Fetch both models in parallel to save time
       final results = await Future.wait([
-        _apiService.getEvaluationMetrics(_model1!),
-        _apiService.getEvaluationMetrics(_model2!),
+        _apiService.getEvaluationMetrics(model1!),
+        _apiService.getEvaluationMetrics(model2!),
       ]);
 
       setState(() {
@@ -61,7 +61,10 @@ class _EvaluationPageState extends State<EvaluationPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Model Evaluation"), centerTitle: true),
+      appBar: AppBar(
+        title: const Text("Select TWO Models To Evaluate"),
+        centerTitle: true,
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -74,7 +77,7 @@ class _EvaluationPageState extends State<EvaluationPage> {
                   child: _buildModelSelector(
                     "First Model",
                     _controller1,
-                    (val) => _model1 = val,
+                    (val) => model1 = val,
                     model1Metrics, // Pass metrics to the card
                     Colors.blueAccent,
                   ),
@@ -84,7 +87,7 @@ class _EvaluationPageState extends State<EvaluationPage> {
                   child: _buildModelSelector(
                     "Second Model",
                     _controller2,
-                    (val) => _model2 = val,
+                    (val) => model2 = val,
                     model2Metrics, // Pass metrics to the card
                     Colors.greenAccent,
                   ),
@@ -101,7 +104,7 @@ class _EvaluationPageState extends State<EvaluationPage> {
                 ),
               ),
               // Button enabled only if BOTH models are selected
-              onPressed: (_model1 != null && _model2 != null && !_isEvaluating)
+              onPressed: (model1 != null && model2 != null && !_isEvaluating)
                   ? _handleEvaluation
                   : null,
               icon: _isEvaluating
@@ -125,7 +128,7 @@ class _EvaluationPageState extends State<EvaluationPage> {
   Widget _buildModelSelector(
     String label,
     SearchController controller,
-    Function(String) onSelect,
+    Function(String?) onSelect,
     Map<String, double> metrics,
     Color themeColor,
   ) {
@@ -150,13 +153,26 @@ class _EvaluationPageState extends State<EvaluationPage> {
             SearchAnchor(
               searchController: controller,
               // 1. Smaller size constraints
-              viewConstraints: const BoxConstraints(
-                maxHeight: 200,
-                maxWidth: 350,
-              ),
+              viewConstraints: const BoxConstraints(maxHeight: 200),
               // 2. The dark color for the expanded list background
               viewBackgroundColor: const Color(0xFF1E1E1E),
               viewSurfaceTintColor: Colors.transparent,
+              headerTextStyle: TextStyle(color: Colors.white, fontSize: 15),
+              viewLeading: IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: () => controller.closeView(controller.text),
+              ),
+              viewTrailing: [
+                IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white),
+                  onPressed: () {
+                    controller.clear();
+                    setState(() {
+                      onSelect(null);
+                    });
+                  },
+                ),
+              ],
               builder: (context, controller) => SearchBar(
                 controller: controller,
                 hintText: "Choose model...",
@@ -167,7 +183,7 @@ class _EvaluationPageState extends State<EvaluationPage> {
                   Color(0xFF252525),
                 ),
                 textStyle: const WidgetStatePropertyAll(
-                  TextStyle(color: Colors.white, fontSize: 13),
+                  TextStyle(color: Colors.white, fontSize: 15),
                 ),
                 padding: const WidgetStatePropertyAll(
                   EdgeInsets.symmetric(horizontal: 12),

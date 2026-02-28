@@ -118,9 +118,9 @@ class ApiService {
   Future<Map<String, dynamic>> runPrediction(String sequenceId) async {
     try {
       // Pass the ID to Flask so it knows which sequence to load from X_DATA
-      final response = await http.get(
-        Uri.parse('$_baseUrl/predict?id=$sequenceId'),
-      ).timeout(const Duration(seconds: 15));
+      final response = await http
+          .get(Uri.parse('$_baseUrl/predict?id=$sequenceId'))
+          .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
@@ -142,12 +142,9 @@ class ApiService {
           .timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
-
         final Map<String, dynamic> data = jsonDecode(response.body);
         return List<String>.from(data['models']);
-        
       } else {
-        
         final errorData = jsonDecode(response.body);
         AppLogger.logFlask('Failed to fetch models: ${response.statusCode}');
         throw Exception(errorData['error'] ?? 'Unknown error fetching models');
@@ -163,11 +160,15 @@ class ApiService {
     try {
       // Safely encode the model name in case it has spaces or special characters
       final encodedModelName = Uri.encodeComponent(modelName);
-      
+
       final response = await http
-          .get(Uri.parse('$_baseUrl/get_evaluation_metrics?model=$encodedModelName'))
+          .get(
+            Uri.parse(
+              '$_baseUrl/get_evaluation_metrics?model=$encodedModelName',
+            ),
+          )
           // INCREASED TIMEOUT: Loading Keras and running inference takes time!
-          .timeout(const Duration(seconds: 60)); 
+          .timeout(const Duration(seconds: 60));
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
@@ -175,13 +176,17 @@ class ApiService {
       } else {
         // This will catch your 400 (No model provided) and 404 (Model not found) errors
         final errorData = jsonDecode(response.body);
-        AppLogger.logFlask('Failed to fetch evaluation metrics: ${response.statusCode}');
-        throw Exception(errorData['error'] ?? 'Server error: ${response.statusCode}');
+        AppLogger.logFlask(
+          'Failed to fetch evaluation metrics: ${response.statusCode}',
+        );
+        throw Exception(
+          errorData['error'] ?? 'Server error: ${response.statusCode}',
+        );
       }
     } catch (e) {
       AppLogger.logFlask('getEvaluationMetrics Error: $e');
       print('Failed to evaluate model: $e');
-      rethrow; 
+      rethrow;
     }
   }
 

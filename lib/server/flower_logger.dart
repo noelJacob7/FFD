@@ -53,11 +53,13 @@ class _FlowerLoggerState extends State<FlowerLogger>
             Divider(),
 
             // Terminal area
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: SizedBox(
-                height: 450,
-                child: ConsoleWidget(logStream: AppLogger.flowerStream),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: SizedBox(
+                  height: 450,
+                  child: ConsoleWidget(logStream: AppLogger.flowerStream),
+                ),
               ),
             ),
           ],

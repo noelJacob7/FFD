@@ -1,19 +1,15 @@
 class SequenceData {
   final String id; // e.g., "sequence_42"
-  final List<dynamic> features; 
+  final List<dynamic> features;
   final int label;
 
-  SequenceData({
-    required this.id,
-    required this.features,
-    required this.label,
-  });
+  SequenceData({required this.id, required this.features, required this.label});
 
   // Factory constructor to easily build this object from JSON
   factory SequenceData.fromJson(String id, Map<String, dynamic> json) {
     return SequenceData(
       id: id,
-      // features will be a List<dynamic>. If it's a 2D array (e.g., for LSTMs), 
+      // features will be a List<dynamic>. If it's a 2D array (e.g., for LSTMs),
       // it handles nested lists automatically.
       features: json['features'] as List<dynamic>,
       label: json['label'] as int,
@@ -53,7 +49,7 @@ class EvaluationMetrics {
       "Precision": precision,
       "Recall": recall,
       "F1 Score": f1Score,
-      // You can add prAuc here if you update your titles list in the chart
+      "PR_AUC": prAuc,
     };
   }
 }

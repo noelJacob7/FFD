@@ -1,4 +1,4 @@
-import flask
+import flask, json
 from flask import request, jsonify
 import numpy as np
 import random
@@ -24,7 +24,12 @@ metrices = {
     "PR-AUC": [],
 }
 
-THRESHOLD = 0.83
+try:
+    with open("federated_model_config.json", "r") as conf:
+        conf_data = json.load(conf)
+    FEDERATED_THRESHOLD = conf_data["threshold"]
+except Exception as e:
+    print("Error initializing FEDERATED_THRESHOLD:", e)
 
 try:
     with np.load("data/test_sequences.npz") as data:
@@ -70,11 +75,27 @@ def update_metrics():
 
 @app.post("/update_threshold")
 def update_threshold():
-    global THRESHOLD
+    global FEDERATED_THRESHOLD
+
     data = request.json
-    THRESHOLD = data.get("threshold", THRESHOLD)
-    print(f"Updated threshold to: {THRESHOLD}")
-    return jsonify({"status": "success", "new_threshold": THRESHOLD}), 200
+    FEDERATED_THRESHOLD = data.get("threshold", FEDERATED_THRESHOLD)
+
+    try:
+        with open("federated_model_config.json", "r") as conf:
+            conf_data = json.load(conf)
+        conf_data["threshold"] = FEDERATED_THRESHOLD
+        with open("federated_model_config.json", "w") as conf_file:
+            json.dump(conf_data, conf_file, indent=2)
+        print(f"Updated threshold to: {FEDERATED_THRESHOLD}")
+
+        return jsonify({"status": "success", "new_threshold": FEDERATED_THRESHOLD}), 200
+
+    except Exception as e:
+        print(f"Failed to update config file: {e}")
+        return (
+            jsonify({"status": "error", "message": "Failed to write to config file"}),
+            500,
+        )
 
 
 @app.route("/get_sequences", methods=["GET"])
@@ -82,7 +103,18 @@ def get_sequences():
     if X_DATA is None:
         return jsonify({"error": "Data not initialized"}), 500
 
-    indices = random.sample(range(len(X_DATA)), 5)
+    fraud_indices = np.where(y_DATA == 1)[0].tolist()
+    normal_indices = np.where(y_DATA == 0)[0].tolist()
+
+    # 2. Add a safety check in case your dataset has fewer than 2 frauds
+    num_fraud = min(2, len(fraud_indices))
+    num_normal = min(5 - num_fraud, len(normal_indices))
+
+    sampled_fraud = random.sample(fraud_indices, num_fraud)
+    sampled_normal = random.sample(normal_indices, num_normal)
+
+    indices = sampled_fraud + sampled_normal
+    random.shuffle(indices)
     payload = {}
 
     for i in indices:
@@ -116,17 +148,18 @@ def predict():
 
         model = load_model("models/best_federated_model.keras")
         y_pred_prob = model.predict(test_data, verbose=0)
-        y_pred_label = int(y_pred_prob[0][0] > THRESHOLD)
+        y_pred_label = int(y_pred_prob[0][0] > FEDERATED_THRESHOLD)
+
+        payload = {
+            "sequence_id": seq_id,
+            "actual_label": y_true,
+            "predicted_probability": float(y_pred_prob[0][0]),
+            "predicted_label": y_pred_label,
+        }
+        print(payload)
 
         return (
-            jsonify(
-                {
-                    "sequence_id": seq_id,
-                    "actual_label": y_true,
-                    "predicted_probability": float(y_pred_prob[0][0]),
-                    "predicted_label": y_pred_label,
-                }
-            ),
+            jsonify(payload),
             200,
         )
     except Exception as e:
@@ -155,9 +188,8 @@ def get_evaluation_metrics():
         model_file_path = os.path.join(models_path, model_name)
         if not os.path.isfile(model_file_path):
             return jsonify({"error": "Model file not found"}), 404
-        
+
         model = load_model(model_file_path)
-        
 
         y_probs = model.predict(X_DATA, verbose=0).ravel()
 

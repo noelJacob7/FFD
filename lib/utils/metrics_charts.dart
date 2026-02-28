@@ -254,7 +254,7 @@ class MetricsCharts {
               sideTitles: SideTitles(
                 showTitles: true,
                 getTitlesWidget: (value, meta) {
-                  const titles = ["Acc", "Prec", "Rec", "F1"];
+                  const titles = ["Acc", "Prec", "Rec", "F1", "AUC"];
                   // Boundary check to prevent index out of bounds errors
                   if (value.toInt() < 0 || value.toInt() >= titles.length) {
                     return const SizedBox.shrink();

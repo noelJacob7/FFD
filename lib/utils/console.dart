@@ -102,7 +102,7 @@ class _ConsoleWidgetState extends State<ConsoleWidget> {
                   style: const TextStyle(
                     color: Colors.green,
                     fontFamily: 'Courier',
-                    fontSize: 12,
+                    fontSize: 18,
                   ),
                 );
               },
