@@ -1,22 +1,24 @@
 import 'package:flutter/material.dart';
-import '../server/global_logger.dart';
-import '../server/training.dart';
-import 'server/detection.dart';
-import 'server/evaluation.dart';
+import 'package:go_router/go_router.dart';
 
-class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+import 'consoles/global_logger.dart';
+import 'training.dart';
+import 'detection.dart';
+import 'evaluation.dart';
+
+class ServerApp extends StatefulWidget {
+  const ServerApp({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<ServerApp> createState() => _ServerAppState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _ServerAppState extends State<ServerApp> {
   int _selectedIndex = 0;
 
   final List<String> _pageTitles = [
-    'Fraud App Home',
-    'Global Console',
+    'Server FFD App',
+    'Consoles',
     'Training',
     'Fraud Detection',
     'Model Evaluation',
@@ -69,7 +71,7 @@ class _HomePageState extends State<HomePage> {
             ),
             ListTile(
               leading: const Icon(Icons.terminal),
-              title: const Text('Global Console'),
+              title: const Text('Consoles'),
               selected: _selectedIndex == 1,
               onTap: () {
                 _onItemTapped(1);
@@ -102,7 +104,15 @@ class _HomePageState extends State<HomePage> {
                 _onItemTapped(4);
                 Navigator.pop(context);
               },
-            ),  
+            ),
+            ListTile(
+              leading: const Icon(Icons.logout),
+              title: const Text('Logout'),
+              onTap: () {
+                Navigator.pop(context);
+                context.go('/');
+              },
+            ),
           ],
         ),
       ),

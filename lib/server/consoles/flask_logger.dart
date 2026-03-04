@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 
-import '../utils/logging.dart';
-import '../utils/services/api.dart';
-import '../utils/services/system.dart';
-import '../utils/console.dart';
+import '../../utils/logging.dart';
+import '../../utils/services/api.dart';
+import '../../utils/services/system.dart';
+import '../../utils/console.dart';
 
 class FlaskLogger extends StatefulWidget {
   const FlaskLogger({super.key});
@@ -12,25 +13,46 @@ class FlaskLogger extends StatefulWidget {
   State<FlaskLogger> createState() => _FlaskLoggerState();
 }
 
-class _FlaskLoggerState extends State<FlaskLogger> with AutomaticKeepAliveClientMixin {
-  // Convention: Initialize the service class
+class _FlaskLoggerState extends State<FlaskLogger>
+    with AutomaticKeepAliveClientMixin {
   final ApiService _apiService = ApiService();
-  String _status = 'Idle';
-  
+  String _status = 'Offline';
+  StreamSubscription<int>? _portStatusSubscription;
+
   @override
   bool get wantKeepAlive => true;
 
   @override
   void initState() {
     super.initState();
-    final systemService = SystemService();
-    systemService.killPort(5000);
-    // Server will be started manually via button
+
+    _portStatusSubscription = SystemService.onPortKilled.stream.listen((
+      killedPort,
+    ) {
+      if (killedPort == 5000 && mounted) {
+        setState(() {
+          _status = 'Offline';
+        });
+      }
+    });
+
+    _runStartupSequence();
+  }
+
+  Future<void> _runStartupSequence() async {
+    final SystemService systemService = SystemService();
+
+    await systemService.killPort(5000);
+
+    if (mounted) {
+      _startServer();
+    }
   }
 
   @override
   void dispose() {
-    _apiService.stopServer(); // Cleanup the sidecar
+    _apiService.stopServer();
+    _portStatusSubscription?.cancel();
     super.dispose();
   }
 
@@ -43,8 +65,12 @@ class _FlaskLoggerState extends State<FlaskLogger> with AutomaticKeepAliveClient
     setState(() {
       _status = 'Starting server...';
     });
-
     await _apiService.startServer();
+    if (mounted) {
+      setState(() {
+        _status = 'READY';
+      });
+    }
   }
 
   @override
@@ -60,12 +86,12 @@ class _FlaskLoggerState extends State<FlaskLogger> with AutomaticKeepAliveClient
                 children: [
                   Expanded(child: Text('API Status: $_status')),
                   ElevatedButton(
-                    onPressed: _startServer,
+                    onPressed: (_status == 'Offline') ? _startServer : null,
                     child: const Text('Start Server'),
                   ),
                   const SizedBox(width: 8),
                   ElevatedButton(
-                    onPressed: _checkStatus,
+                    onPressed: _status == 'Offline' ? null : _checkStatus,
                     child: const Text('Check Health'),
                   ),
                 ],
@@ -78,7 +104,10 @@ class _FlaskLoggerState extends State<FlaskLogger> with AutomaticKeepAliveClient
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(20),
-                child: SizedBox(height: 450, child: ConsoleWidget(logStream: AppLogger.flaskStream)),
+                child: SizedBox(
+                  height: 450,
+                  child: ConsoleWidget(logStream: AppLogger.flaskStream),
+                ),
               ),
             ),
           ],

@@ -55,7 +55,7 @@ def home():
 
 @app.get("/get_health")
 def health_check():
-    return jsonify({"status": "ready"}), 200
+    return jsonify({"status": "OK"}), 200
 
 
 @app.post("/update_metrics")

@@ -4,6 +4,7 @@ import 'package:fl_chart/fl_chart.dart';
 
 // import 'package:fl_fraud_detection/utils/logging.dart';
 import 'package:fl_fraud_detection/utils/services/api.dart';
+import 'package:fl_fraud_detection/utils/services/flower.dart';
 import 'package:fl_fraud_detection/utils/metrics_charts.dart';
 
 class TrainingPage extends StatefulWidget {
@@ -15,8 +16,9 @@ class TrainingPage extends StatefulWidget {
 
 class _TrainingPageState extends State<TrainingPage> {
   final ApiService _apiservice = ApiService();
+  final FlowerService _flowerService = FlowerService();
 
-  String _status = 'Idle';
+  String _status = 'Offline';
   int _clientCount = 0;
 
   //dummy values to test chart
@@ -121,14 +123,29 @@ class _TrainingPageState extends State<TrainingPage> {
     });
   }
 
-  void _startTraining() async {
-    setState(() {
-      _status = 'Training started...';
-    });
+  void _checkDataFetch() async {
+    bool isFlowerUp = await _flowerService.isServerRunning();
 
-    _metricsTimer = Timer.periodic(Duration(seconds: 2), (timer) {
-      _fetchMetrics();
-    });
+    if (isFlowerUp) {
+      setState(() {
+        _status = 'In Progress';
+      });
+      _metricsTimer = Timer.periodic(Duration(seconds: 2), (timer) {
+        _fetchMetrics();
+      });
+    } else {
+      setState(() {
+      _status = 'Offline';
+        
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Flower Server is Offline. Start the Server to begin Data fetch'),
+          duration: const Duration(seconds: 2),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    }
   }
 
   void _fetchMetrics() {
@@ -187,7 +204,9 @@ class _TrainingPageState extends State<TrainingPage> {
                 children: [
                   Expanded(child: Text("Training status: $_status")),
                   ElevatedButton(
-                    onPressed: _startTraining,
+                    onPressed: _status == 'In Progress'
+                        ? null
+                        : _checkDataFetch,
                     child: const Text("Start Data fetch"),
                   ),
                   SizedBox(width: 8),

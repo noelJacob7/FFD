@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../utils/console.dart';
-import '../utils/logging.dart';
-import '../utils/services/system.dart';
+import '../../utils/console.dart';
+import '../../utils/logging.dart';
+import '../../utils/services/system.dart';
 
 class SystemLogger extends StatefulWidget {
   const SystemLogger({super.key});

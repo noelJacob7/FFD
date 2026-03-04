@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import '../utils/console.dart';
-import '../utils/logging.dart';
-import '../utils/services/flower.dart';
-import '../utils/services/system.dart';
+import 'dart:async';
+
+import '../../utils/console.dart';
+import '../../utils/logging.dart';
+import '../../utils/services/flower.dart';
+import '../../utils/services/system.dart';
 
 class FlowerLogger extends StatefulWidget {
   const FlowerLogger({super.key});
@@ -15,20 +17,39 @@ class _FlowerLoggerState extends State<FlowerLogger>
     with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
+  StreamSubscription<int>? _portStatusSubscription;
 
   final flowerService = FlowerService();
+  String _status = 'Idle';
 
   @override
   void initState() {
     super.initState();
     final systemService = SystemService();
     systemService.killPort(8080);
-    // Server will be started manually via button
+
+    _portStatusSubscription = SystemService.onPortKilled.stream.listen((
+      killedPort,
+    ) {
+      if (killedPort == 8080 && mounted) {
+        setState(() {
+          _status = 'Idle';
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _portStatusSubscription?.cancel();
+    super.dispose();
   }
 
   void _startServer() async {
-    // Convention: Initialize the service class
     await flowerService.startServer();
+    setState(() {
+      _status = "Running";
+    });
   }
 
   @override
@@ -42,9 +63,9 @@ class _FlowerLoggerState extends State<FlowerLogger>
               padding: const EdgeInsets.all(8.0),
               child: Row(
                 children: [
-                  const Expanded(child: Text("Flower Logs")),
+                  Expanded(child: Text("Flower Server status: $_status")),
                   ElevatedButton(
-                    onPressed: _startServer,
+                    onPressed: (_status != "Running") ? _startServer : null,
                     child: const Text("Start Flower Server"),
                   ),
                 ],

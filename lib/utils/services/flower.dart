@@ -31,4 +31,22 @@ class FlowerService {
       print('Failed to start Python process: $e');
     }
   }
+
+  Future<bool> isServerRunning() async {
+    try {
+      // Attempt a raw TCP connection to localhost on the target port
+      final socket = await Socket.connect(
+        '127.0.0.1',
+        8080,
+        timeout: const Duration(milliseconds: 500),
+      );
+
+      // If we get here, the connection succeeded! The port is actively in use.
+      socket.destroy(); // Instantly close it so we don't hold up the server
+      return true;
+    } catch (e) {
+      // Connection refused or timed out. The server is not up yet.
+      return false;
+    }
+  }
 }

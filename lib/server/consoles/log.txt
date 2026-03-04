@@ -1,0 +1,78 @@
+Python server started with PID: 48271Flower Log: 2026-02-20 09:49:16.759550: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.Flower Log: 2026-02-20 09:49:16.798109: I tensorflow/core/util/port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.Flower Log: 2026-02-20 09:49:18.075578: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 AVX512F AVX512_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.Flower Log: 2026-02-20 09:49:21.667551: I tensorflow/core/util/port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.Flower Log: 2026-02-20 09:49:21.673993: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.Flower Log: 2026-02-20 09:49:23.162049: E external/local_xla/xla/stream_executor/cuda/cuda_platform.cc:51] failed call to cuInit: INTERNAL: CUDA error: Failed call to cuInit: UNKNOWN ERROR (303)Flower Log: [93mWARNING [0m:   DEPRECATED FEATURE: flwr.server.start_server() is deprecated.
+	Instead, use the `flower-superlink` CLI command to start a SuperLink as shown below:
+
+		$ flower-superlink --insecure
+
+	To view usage and all available options, run:
+
+		$ flower-superlink --help
+
+	Using `start_server()` is deprecated.
+
+            This is a deprecated feature. It will be removed
+            entirely in future versions of Flower.Flower Log: [92mINFO [0m:      Starting Flower server, config: num_rounds=5, no round_timeoutFlower Log: [92mINFO [0m:      Flower ECE: gRPC server running (5 rounds), SSL is disabled
+[92mINFO [0m:      [INIT]
+[92mINFO [0m:      Using initial global parameters provided by strategy
+[92mINFO [0m:      Starting evaluation of initial global parameters
+[92mINFO [0m:      Evaluation returned no results (`None`)
+[92mINFO [0m:      
+[92mINFO [0m:      [ROUND 1]Flower Log: [92mINFO [0m:      configure_fit: strategy sampled 2 clients (out of 2)Flower Log: [92mINFO [0m:      aggregate_fit: received 2 results and 0 failuresFlower Log: [93mWARNING [0m:   No fit_metrics_aggregation_fn providedFlower: 
+=== GLOBAL METRICS - ROUND 1 ===
+Accuracy:  0.999625
+Precision: 0.952381
+Recall:    0.740741
+F1 Score:  0.833333
+PR-AUC:    0.815270
+====================================Flower: Saved new best modelFlower Log: [92mINFO [0m:      configure_evaluate: strategy sampled 2 clients (out of 2)Flower Log: [92mINFO [0m:      aggregate_evaluate: received 2 results and 0 failures
+[93mWARNING [0m:   No evaluate_metrics_aggregation_fn provided
+[92mINFO [0m:      
+[92mINFO [0m:      [ROUND 2]
+[92mINFO [0m:      configure_fit: strategy sampled 2 clients (out of 2)Flower Log: [92mINFO [0m:      aggregate_fit: received 2 results and 0 failuresFlower: 
+=== GLOBAL METRICS - ROUND 2 ===
+Accuracy:  0.999625
+Precision: 0.963415
+Recall:    0.731481
+F1 Score:  0.831579
+PR-AUC:    0.814725
+====================================Flower Log: [92mINFO [0m:      configure_evaluate: strategy sampled 2 clients (out of 2)Flower Log: [92mINFO [0m:      aggregate_evaluate: received 2 results and 0 failures
+[92mINFO [0m:      
+[92mINFO [0m:      [ROUND 3]
+[92mINFO [0m:      configure_fit: strategy sampled 2 clients (out of 2)Flower Log: [92mINFO [0m:      aggregate_fit: received 2 results and 0 failuresFlower: 
+=== GLOBAL METRICS - ROUND 3 ===
+Accuracy:  0.999649
+Precision: 0.975610
+Recall:    0.740741
+F1 Score:  0.842105
+PR-AUC:    0.815765
+====================================Flower: Saved new best modelFlower Log: [92mINFO [0m:      configure_evaluate: strategy sampled 2 clients (out of 2)Flower Log: [92mINFO [0m:      aggregate_evaluate: received 2 results and 0 failures
+[92mINFO [0m:      
+[92mINFO [0m:      [ROUND 4]
+[92mINFO [0m:      configure_fit: strategy sampled 2 clients (out of 2)Flower Log: [92mINFO [0m:      aggregate_fit: received 2 results and 0 failuresFlower: 
+=== GLOBAL METRICS - ROUND 4 ===
+Accuracy:  0.999602
+Precision: 0.951220
+Recall:    0.722222
+F1 Score:  0.821053
+PR-AUC:    0.812591
+====================================Flower Log: [92mINFO [0m:      configure_evaluate: strategy sampled 2 clients (out of 2)Flower Log: [92mINFO [0m:      aggregate_evaluate: received 2 results and 0 failures
+[92mINFO [0m:      
+[92mINFO [0m:      [ROUND 5]
+[92mINFO [0m:      configure_fit: strategy sampled 2 clients (out of 2)Flower Log: [92mINFO [0m:      aggregate_fit: received 2 results and 0 failuresFlower: 
+=== GLOBAL METRICS - ROUND 5 ===
+Accuracy:  0.999602
+Precision: 0.951220
+Recall:    0.722222
+F1 Score:  0.821053
+PR-AUC:    0.810561
+====================================Flower Log: [92mINFO [0m:      configure_evaluate: strategy sampled 2 clients (out of 2)Flower Log: [92mINFO [0m:      aggregate_evaluate: received 2 results and 0 failures
+[92mINFO [0m:      
+[92mINFO [0m:      [SUMMARY]
+[92mINFO [0m:      Run finished 5 round(s) in 345.23s
+[92mINFO [0m:      	History (loss, distributed):
+[92mINFO [0m:      		round 1: 0.008950508432462811
+[92mINFO [0m:      		round 2: 0.009156923042610288
+[92mINFO [0m:      		round 3: 0.009394236840307713
+[92mINFO [0m:      		round 4: 0.005872627021744847
+[92mINFO [0m:      		round 5: 0.004862653790041804
+[92mINFO [0m:
