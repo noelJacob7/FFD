@@ -6,14 +6,14 @@ import '../../utils/logging.dart';
 import '../../utils/services/flower.dart';
 import '../../utils/services/system.dart';
 
-class FlowerLogger extends StatefulWidget {
-  const FlowerLogger({super.key});
+class FlowerServer extends StatefulWidget {
+  const FlowerServer({super.key});
 
   @override
-  State<FlowerLogger> createState() => _FlowerLoggerState();
+  State<FlowerServer> createState() => _FlowerServerState();
 }
 
-class _FlowerLoggerState extends State<FlowerLogger>
+class _FlowerServerState extends State<FlowerServer>
     with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;

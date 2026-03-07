@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'flask_logger.dart';
-import 'flower_logger.dart';
-import 'system_logger.dart';
 
-class GlobalLogger extends StatelessWidget {
-  const GlobalLogger({super.key});
+import '../common/consoles/flask_logger.dart';
+import 'flower_console.dart';
+import '../common/consoles/system_logger.dart';
+
+class ClientConsoles extends StatelessWidget {
+  const ClientConsoles({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -12,7 +13,7 @@ class GlobalLogger extends StatelessWidget {
       length: 3,
       child: Scaffold(
         appBar: AppBar(
-          toolbarHeight:0, 
+          toolbarHeight: 0,
           bottom: const TabBar(
             tabs: [
               Tab(text: 'Flask', icon: Icon(Icons.api)),
@@ -24,7 +25,7 @@ class GlobalLogger extends StatelessWidget {
         body: const TabBarView(
           children: [
             FlaskLogger(),
-            FlowerLogger(),
+            ClientFlower(),
             SystemLogger(),
           ],
         ),

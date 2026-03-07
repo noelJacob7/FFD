@@ -2,6 +2,8 @@ import 'dart:io';
 import 'dart:convert';
 import 'dart:async'; // Required for Timer/Duration
 import 'package:http/http.dart' as http;
+
+import 'package:fl_fraud_detection/utils/services/system.dart';
 import '../logging.dart';
 import 'data_manager.dart';
 
@@ -11,11 +13,14 @@ class ApiService {
 
   Future<void> startServer() async {
     try {
+      String dir = SystemService().findHandlerDir();
+      print(dir);
+
       _process = await Process.start(
         'python3',
         ['-u', 'app.py'],
         runInShell: true,
-        workingDirectory: '/home/noel/project/fl_fraud_detection/handler',
+        workingDirectory: dir,
       );
 
       // Pipe output to logger so UI terminal can display Flask logs
@@ -190,8 +195,36 @@ class ApiService {
     }
   }
 
+  Future<List<String>> getDataFiles() async {
+    try {
+      final response = await http
+          .get(Uri.parse('$_baseUrl/get_data_files'))
+          .timeout(const Duration(seconds: 5));
+
+      if (response.statusCode == 200) {
+        // Because Flask returns a raw list here, jsonDecode returns a List<dynamic>
+        final List<dynamic> decodedList = jsonDecode(response.body);
+
+        // Safely convert it to a List<String>
+        return List<String>.from(decodedList);
+      } else {
+        final errorData = jsonDecode(response.body);
+        throw Exception(
+          errorData['error'] ?? 'Server error: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      print('Failed to fetch data files: $e');
+      rethrow;
+    }
+  }
+
   Future<void> stopServer() async {
     _process?.kill();
     _process = null;
   }
+}
+
+void main() {
+  ApiService().startServer();
 }

@@ -215,6 +215,22 @@ def get_evaluation_metrics():
         return jsonify({"error": str(e)}), 500
 
 
+@app.get('/get_data_files')
+def get_files():
+    try:
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        
+        models_path = os.path.join(script_dir, 'data')
+        files = os.listdir(models_path)
+        data_files = [file for file in files if file.endswith('.npz')]
+        print(f"Filtered .npz files: {data_files}")
+        
+        return jsonify(data_files), 200
+        
+    except Exception as e:
+        return jsonify({'error': {e}}), 500
+        
+        
 if __name__ == "__main__":
 
     app.run(host="0.0.0.0", port=5000)

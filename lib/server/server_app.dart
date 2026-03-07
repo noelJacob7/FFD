@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import 'consoles/global_logger.dart';
-import 'training.dart';
-import 'detection.dart';
+import 'global_logger.dart';
+import '../common/training.dart';
+import '../common/detection.dart';
 import 'evaluation.dart';
 
 class ServerApp extends StatefulWidget {
