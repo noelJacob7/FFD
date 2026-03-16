@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../common/consoles/flask_logger.dart';
-import '../common/consoles/flower_logger.dart';
+import 'flower_logger.dart';
 import '../common/consoles/system_logger.dart';
 
 class GlobalLogger extends StatelessWidget {
@@ -24,7 +24,7 @@ class GlobalLogger extends StatelessWidget {
         body: const TabBarView(
           children: [
             FlaskLogger(),
-            FlowerLogger(),
+            FlowerServer(),
             SystemLogger(),
           ],
         ),

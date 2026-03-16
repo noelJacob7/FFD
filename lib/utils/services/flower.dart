@@ -35,7 +35,7 @@ class FlowerService {
     }
   }
 
-  Future<bool> isServerRunning() async {
+  Future<bool> isRunning() async {
     try {
       // Attempt a raw TCP connection to localhost on the target port
       final socket = await Socket.connect(
@@ -53,13 +53,22 @@ class FlowerService {
     }
   }
 
-  Future<void> startClient(String clientData) async {
+  Future<void> startClient(String clientData, String serverUrl) async {
     try {
       String dir = SystemService().findHandlerDir();
       String datasetDir = 'data/$clientData';
+      String cleanAddress = serverUrl
+          .replaceAll('tcp://', '')
+          .replaceAll('https://', '')
+          .replaceAll('http://', '');
+
+      if (cleanAddress.isEmpty) {
+        cleanAddress =
+            '127.0.0.1:8080';
+      }
       _process = await Process.start(
         'python3',
-        ['-u', 'client.py', datasetDir],
+        ['-u', 'client.py', datasetDir, cleanAddress],
         runInShell: true,
         workingDirectory: dir,
       );

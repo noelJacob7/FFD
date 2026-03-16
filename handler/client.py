@@ -1,13 +1,14 @@
 import flwr as fl
 import numpy as np
-import sys
+import sys, requests
 from model import create_model, evaluate_thresholds
 from sklearn.metrics import (
     accuracy_score,
     precision_score,
     recall_score,
     f1_score,
-    average_precision_score,
+    precision_recall_curve,
+    auc,
 )
 
 # Load local dataset
@@ -33,7 +34,8 @@ class FraudClient(fl.client.NumPyClient):
         return model.get_weights()
 
     def fit(self, parameters, config):
-
+        current_round = config.get("server_round", 0)
+        print(f"\n[Client] Starting training for Server Round {current_round}")
         model.set_weights(parameters)
 
         model.fit(
@@ -51,20 +53,38 @@ class FraudClient(fl.client.NumPyClient):
 
         y_pred = (y_probs > threshold).astype(int)
 
-        accuracy = accuracy_score(y_train, y_pred)
-        precision = precision_score(y_train, y_pred, zero_division=0)
-        recall = recall_score(y_train, y_pred)
-        f1 = f1_score(y_train, y_pred)
-        pr_auc = average_precision_score(y_train, y_probs)
+        accuracy = round(accuracy_score(y_train, y_pred),6)
+        precision = round(precision_score(y_train, y_pred, zero_division=0),6)
+        recall = round(recall_score(y_train, y_pred),6)
+        f1 = round(f1_score(y_train, y_pred),6)
+        precision_vals, recall_vals, _ = precision_recall_curve(y_train, y_probs)
+        pr_auc = round(auc(recall_vals, precision_vals), 6)
 
         print("\n--- CLIENT LOCAL METRICS ---")
-        print(f"Accuracy:  {accuracy:.6f}")
-        print(f"Precision: {precision:.6f}")
-        print(f"Recall:    {recall:.6f}")
-        print(f"F1 Score:  {f1:.6f}")
-        print(f"PR-AUC:    {pr_auc:.6f}")
+        print(f"Round:  {current_round}")
+        print(f"Accuracy:  {accuracy}")
+        print(f"Precision: {precision}")
+        print(f"Recall:    {recall}")
+        print(f"F1 Score:  {f1}")
+        print(f"PR-AUC:    {pr_auc}")
         print("-----------------------------\n")
 
+        try:
+            payload = {
+                "round": current_round,
+                "accuracy": float(accuracy),
+                "precision": float(precision),
+                "recall": float(recall),
+                "f1_score": float(f1),
+                "pr_auc": float(pr_auc),
+            }
+            # Send to your existing Flask app running on 5000
+            requests.post(
+                "http://localhost:5000/update_metrics", json=payload, timeout=2
+            )
+        except Exception as e:
+            print(f"Flask update failed (is the API running?): {e}")
+            
         return model.get_weights(), len(X_train), {}
 
     def evaluate(self, parameters, config):
@@ -72,8 +92,8 @@ class FraudClient(fl.client.NumPyClient):
         loss, auc = model.evaluate(X_train, y_train, verbose=1)
         return loss, len(X_train), {"auc": float(auc)}
 
-
-fl.client.start_numpy_client(
-    server_address="localhost:8080",
-    client=FraudClient(),
-)
+if __name__ == "__main__":
+    fl.client.start_numpy_client(
+        server_address=sys.argv[2],
+        client=FraudClient(),
+    )

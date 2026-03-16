@@ -26,8 +26,8 @@ class _ClientFlowerState extends State<ClientFlower>
   @override
   void initState() {
     super.initState();
-    final systemService = SystemService();
-    systemService.killPort(8080);
+    // final systemService = SystemService();
+    // systemService.killPort(8080);
 
     _portStatusSubscription = SystemService.onPortKilled.stream.listen((
       killedPort,
@@ -46,21 +46,28 @@ class _ClientFlowerState extends State<ClientFlower>
     super.dispose();
   }
 
-  Future<String?> _showDialog() async {
-    return await showDialog(
+  Future<(String, String)?> _showDialog() async {
+    return await showDialog<(String, String)>(
       context: context,
+      // Prevents dismissing by clicking outside, forcing them to use Cancel/Connect
+      barrierDismissible: false,
       builder: (context) => const DatasetSelectionDialog(),
     );
   }
 
   void _startClient() async {
-    //get data from api
-    final clientDataset = await _showDialog();
+    final result = await _showDialog();
 
-    if (clientDataset == null) {
-      return;
+    if (result == null) {
+      return; // User hit cancel
     }
-    await flowerService.startClient(clientDataset);
+
+    // Destructure the record
+    final clientDataset = result.$1;
+    final serverUrl = result.$2;
+
+    await flowerService.startClient(clientDataset, serverUrl);
+
     setState(() {
       _status = "Running";
     });
@@ -114,6 +121,7 @@ class DatasetSelectionDialog extends StatefulWidget {
 
 class _DatasetSelectionDialogState extends State<DatasetSelectionDialog> {
   final ApiService _apiService = ApiService();
+  final TextEditingController _urlController = TextEditingController();
 
   List<String> _dataFiles = [];
   String? _selectedFile;
@@ -123,6 +131,12 @@ class _DatasetSelectionDialogState extends State<DatasetSelectionDialog> {
   void initState() {
     super.initState();
     _fetchFiles();
+  }
+
+  @override
+  void dispose() {
+    _urlController.dispose(); // Always dispose controllers!
+    super.dispose();
   }
 
   Future<void> _fetchFiles() async {
@@ -142,62 +156,85 @@ class _DatasetSelectionDialogState extends State<DatasetSelectionDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Select a Dataset'),
-
-      // CONTENT AREA
+      title: const Text('Configure Client Node'), // Updated title
+      // Wrap content in a Column to hold both the Dropdown and TextField
       content: _isLoading
           ? const SizedBox(
               height: 100,
               child: Center(child: CircularProgressIndicator()),
             )
-          : _dataFiles.isEmpty
-          ? const Text("No .npz files found.")
-          : DropdownButton<String>(
-              isExpanded: true,
-              focusColor: Colors.transparent,
-              menuWidth: 250,
-              itemHeight: 49,
-              menuMaxHeight: 200,
-              dropdownColor: const Color.fromARGB(255, 234, 229, 234),
-              value: _selectedFile,
-              hint: const Text("Select a dataset"),
-              items: _dataFiles.map((String fileName) {
-                return DropdownMenuItem<String>(
-                  value: fileName,
-                  child: Text(fileName),
-                );
-              }).toList(),
-              onChanged: (String? newValue) {
-                if (newValue != null) {
-                  setState(() {
-                    _selectedFile = newValue;
-                  });
-                }
-              },
+          : Column(
+              mainAxisSize: MainAxisSize.min, // Keeps dialog compact
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (_dataFiles.isEmpty)
+                  const Text("No .npz files found.")
+                else ...[
+                  const SizedBox(height: 20),
+                  const Text(
+                    "1. Select Dataset:",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  DropdownButton<String>(
+                    isExpanded: true,
+                    focusColor: Colors.transparent,
+                    dropdownColor: const Color.fromARGB(255, 234, 229, 234),
+                    value: _selectedFile,
+                    hint: const Text("Select a dataset"),
+                    items: _dataFiles.map((String fileName) {
+                      return DropdownMenuItem<String>(
+                        value: fileName,
+                        child: Text(fileName),
+                      );
+                    }).toList(),
+                    onChanged: (String? newValue) {
+                      if (newValue != null) {
+                        setState(() {
+                          _selectedFile = newValue;
+                        });
+                      }
+                    },
+                  ),
+                ],
+                const SizedBox(height: 24),
+                const Text(
+                  "2. Server Connection:",
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _urlController,
+                  decoration: const InputDecoration(
+                    labelText: 'ngrok URL (or leave blank for local)',
+                    hintText: 'e.g., tcp://0.tcp.ngrok.io:14321',
+                    border: OutlineInputBorder(),
+                    isDense: true, // Makes the text field slightly less bulky
+                  ),
+                ),
+              ],
             ),
 
-      // BUTTONS AREA
       actions: [
-        // CANCEL BUTTON
         TextButton(
-          onPressed: () {
-            Navigator.pop(context, null); // Return null
-          },
+          onPressed: () => Navigator.pop(context, null),
           child: const Text("Cancel"),
         ),
-
-        // CONFIRM BUTTON
         ElevatedButton(
-          // Disable button if loading or no file selected
-          onPressed: (_isLoading || _selectedFile == null)
+          // Disable if loading, no file selected, OR no URL typed (if URL is strictly required)
+          onPressed:
+              (_isLoading ||
+                  _selectedFile == null ||
+                  _urlController.text.trim().isEmpty)
               ? null
               : () {
-                  Navigator.pop(
-                    context,
-                    _selectedFile,
-                  ); // Return the selected string
+                  // Return both the dataset and the URL as a Record
+                  Navigator.pop(context, (
+                    _selectedFile!,
+                    _urlController.text.trim(),
+                  ));
                 },
-          child: const Text("Confirm"),
+          child: const Text("Connect"),
         ),
       ],
     );

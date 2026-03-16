@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import 'consoles.dart';
+import 'package:fl_fraud_detection/common/training.dart';
+import 'package:fl_fraud_detection/common/detection.dart';
 
 class ClientApp extends StatefulWidget {
   const ClientApp({super.key});
@@ -28,6 +31,8 @@ class _ClientAppState extends State<ClientApp> {
   final List<Widget> _widgetOptions = [
     const Scaffold(body: Center(child: Text('Welcome to the client side!'))),
     ClientConsoles(),
+    TrainingPage(),
+    DetectionPage(),
   ];
 
   @override
@@ -68,24 +73,32 @@ class _ClientAppState extends State<ClientApp> {
                 Navigator.pop(context);
               },
             ),
-            // ListTile(
-            //   leading: const Icon(Icons.model_training),
-            //   title: const Text('Training'),
-            //   selected: _selectedIndex == 2,
-            //   onTap: () {
-            //     _onItemTapped(2);
-            //     Navigator.pop(context);
-            //   },
-            // ),
-            // ListTile(
-            //   leading: const Icon(Icons.report),
-            //   title: const Text('Fraud Detection'),
-            //   selected: _selectedIndex == 3,
-            //   onTap: () {
-            //     _onItemTapped(3);
-            //     Navigator.pop(context);
-            //   },
-            // ),
+            ListTile(
+              leading: const Icon(Icons.model_training),
+              title: const Text('Training'),
+              selected: _selectedIndex == 2,
+              onTap: () {
+                _onItemTapped(2);
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.report),
+              title: const Text('Fraud Detection'),
+              selected: _selectedIndex == 3,
+              onTap: () {
+                _onItemTapped(3);
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.logout),
+              title: const Text('Logout'),
+              onTap: () {
+                Navigator.pop(context);
+                context.go('/');
+              },
+            ),
           ],
         ),
       ),

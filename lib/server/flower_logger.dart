@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 
-import '../../utils/console.dart';
-import '../../utils/logging.dart';
-import '../../utils/services/flower.dart';
-import '../../utils/services/system.dart';
+import '../utils/console.dart';
+import '../utils/logging.dart';
+import '../utils/services/flower.dart';
+import '../utils/services/system.dart';
 
 class FlowerServer extends StatefulWidget {
   const FlowerServer({super.key});
@@ -47,6 +47,11 @@ class _FlowerServerState extends State<FlowerServer>
 
   void _startServer() async {
     await flowerService.startServer();
+    ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('To connect clients open a public tcp port using \'ngrok tcp 8080\'')
+        ),
+      );
     setState(() {
       _status = "Running";
     });

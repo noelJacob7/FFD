@@ -18,21 +18,32 @@ class AppLogger {
     return rawLog.replaceAll(ansiRegex, '');
   }
 
+  static void _processAndEmit(String message, StreamController<String> controller) {
+    // 1. Clean ANSI codes and remove carriage returns (\r) which cause weird line breaks
+    String cleanMessage = cleanLog(message).replaceAll('\r', '');
+    
+
+    List<String> lines = cleanMessage.split('\n');
+    
+    for (String line in lines) {
+      String trimmedLine = line.trim();
+      // Add the line to the console if it actually contains text
+      if (trimmedLine.isNotEmpty) {
+        controller.add(trimmedLine);
+      }
+    }
+  }
+
   static void logFlask(String message) {
-    // Ensure newline trimmed and emit
-    String cleanMessage = cleanLog(message);
-    _flaskcontroller.add(cleanMessage.trimRight());
+    _processAndEmit(message, _flaskcontroller);
   }
 
   static void logFlower(String message) {
-    // Ensure newline trimmed and emit
-    String cleanMessage = cleanLog(message);
-    _flowercontroller.add(cleanMessage.trimRight());
+    _processAndEmit(message, _flowercontroller);
   }
 
   static void logSystem(String message) {
-    // Ensure newline trimmed and emit
-    _systemcontroller.add(message.trimRight());
+    _processAndEmit(message, _systemcontroller);
   }
 
   static void dispose() {

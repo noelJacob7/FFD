@@ -16,7 +16,7 @@ class TrainingPage extends StatefulWidget {
 
 class _TrainingPageState extends State<TrainingPage> {
   final ApiService _apiservice = ApiService();
-  final FlowerService _flowerService = FlowerService();
+  // final FlowerService _flowerService = FlowerService();
 
   String _status = 'Offline';
   int _clientCount = 0;
@@ -124,28 +124,28 @@ class _TrainingPageState extends State<TrainingPage> {
   }
 
   void _checkDataFetch() async {
-    bool isFlowerUp = await _flowerService.isServerRunning();
+    _metricsTimer = Timer.periodic(Duration(seconds: 2), (timer) {
+      _fetchMetrics();
+    });
+    // bool isFlowerUp = await _flowerService.isRunning();
 
-    if (isFlowerUp) {
-      setState(() {
-        _status = 'In Progress';
-      });
-      _metricsTimer = Timer.periodic(Duration(seconds: 2), (timer) {
-        _fetchMetrics();
-      });
-    } else {
-      setState(() {
-      _status = 'Offline';
+    // if (isFlowerUp) {
+    //   setState(() {
+    //     _status = 'In Progress';
+    //   });
+    // } else {
+    //   setState(() {
+    //   _status = 'Offline';
         
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Flower Server is Offline. Start the Server to begin Data fetch'),
-          duration: const Duration(seconds: 2),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
-    }
+    //   });
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     SnackBar(
+    //       content: Text('Flower Server is Offline. Start the Server to begin Data fetch'),
+    //       duration: const Duration(seconds: 2),
+    //       backgroundColor: Colors.redAccent,
+    //     ),
+    //   );
+    // }
   }
 
   void _fetchMetrics() {

@@ -15,7 +15,7 @@ from sklearn.metrics import (
 )
 from model import evaluate_thresholds
 
-metrices = {
+metrics = {
     "Round": [],
     "Accuracy": [],
     "Precision": [],
@@ -63,27 +63,30 @@ def update_metrics():
     data = request.json
 
     # Store the incoming data into the global dictionary
-    metrices["Round"].append(data["round"])
-    metrices["Accuracy"].append(data["accuracy"])
-    metrices["Precision"].append(data["precision"])
-    metrices["Recall"].append(data["recall"])
-    metrices["F1 Score"].append(data["f1_score"])
-    metrices["PR-AUC"].append(data["pr_auc"])
+    metrics["Round"].append(data["round"])
+    metrics["Accuracy"].append(data["accuracy"])
+    metrics["Precision"].append(data["precision"])
+    metrics["Recall"].append(data["recall"])
+    metrics["F1 Score"].append(data["f1_score"])
+    metrics["PR-AUC"].append(data["pr_auc"])
 
     return jsonify({"status": "success"}), 200
 
 
-@app.post("/update_threshold")
+@app.post("/update_saved_metrics")
 def update_threshold():
     global FEDERATED_THRESHOLD
 
     data = request.json
     FEDERATED_THRESHOLD = data.get("threshold", FEDERATED_THRESHOLD)
+    pr_auc = data.get("pr_auc")
 
     try:
         with open("federated_model_config.json", "r") as conf:
             conf_data = json.load(conf)
         conf_data["threshold"] = FEDERATED_THRESHOLD
+        conf_data["pr_auc"] = pr_auc
+        
         with open("federated_model_config.json", "w") as conf_file:
             json.dump(conf_data, conf_file, indent=2)
         print(f"Updated threshold to: {FEDERATED_THRESHOLD}")
@@ -128,8 +131,8 @@ def get_sequences():
 
 @app.get("/training_metrics")
 def get_training_metrics():
-    print(metrices)
-    return jsonify({"finished": len(metrices["Round"]) > 5, "metrics": metrices}), 200
+    print(metrics)
+    return jsonify({"finished": len(metrics["Round"]) > 5, "metrics": metrics}), 200
 
 
 @app.route("/predict", methods=["GET"])

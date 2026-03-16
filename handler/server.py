@@ -1,6 +1,7 @@
 import flwr as fl
 import numpy as np
 from keras.models import load_model
+import json
 from sklearn.metrics import (
     accuracy_score,
     precision_score,
@@ -23,6 +24,16 @@ except Exception as e:
 initial_weights = model.get_weights()
 initial_parameters = fl.common.ndarrays_to_parameters(initial_weights)
 
+try:
+    with open("federated_model_config.json", "r") as conf:
+        conf_data = json.load(conf)
+except Exception as e:
+    print(f"Error reading federated json: {e}")
+
+
+def fit_config(server_round: int):
+    return {"server_round": server_round}
+
 
 class SaveBestPRStrategy(fl.server.strategy.FedAvg):
     def __init__(self, model, X_test, y_test, *args, **kwargs):
@@ -30,7 +41,7 @@ class SaveBestPRStrategy(fl.server.strategy.FedAvg):
         self.model = model
         self.X_test = X_test
         self.y_test = y_test
-        self.best_prauc = 0
+        self.best_prauc = conf_data["pr_auc"]
 
     def aggregate_fit(self, server_round, results, failures):
 
@@ -88,14 +99,18 @@ class SaveBestPRStrategy(fl.server.strategy.FedAvg):
             print(f"Flask update failed (is the API running?): {e}")
 
         if pr_auc > self.best_prauc:
-            self.best_prauc = pr_auc
-            self.model.save("models/best_federated_model.keras")
-            print("Saved new best model")
-            requests.post(
-                "http://localhost:5000/update_threshold",
-                json={"threshold": threshold},
-                timeout=2,
-            )
+            try:
+                self.best_prauc = pr_auc
+                self.model.save("models/best_federated_model.keras")
+                print("Saved new best model")
+                requests.post(
+                    "http://localhost:5000/update_saved_metrics",
+                    json={"threshold": threshold, "pr_auc": pr_auc},
+                    timeout=2,
+                )
+            except Exception as e:
+                 print(f"Flask update failed (is the API running?): {e}")
+                 
         return aggregated_parameters, aggregated_metrics
 
 
@@ -116,6 +131,7 @@ if __name__ == "__main__":
         min_fit_clients=2,
         min_available_clients=2,
         initial_parameters=initial_parameters,
+        on_fit_config_fn=fit_config,
     )
 
     fl.server.start_server(
