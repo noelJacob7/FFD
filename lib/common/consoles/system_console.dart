@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
+
+import 'package:fl_fraud_detection/utils/services/api.dart';
+import 'package:fl_fraud_detection/utils/services/flower.dart';
 import '../../utils/console.dart';
 import '../../utils/logging.dart';
 import '../../utils/services/system.dart';
@@ -6,19 +10,23 @@ import '../../utils/services/system.dart';
 class SystemLogger extends StatefulWidget {
   const SystemLogger({super.key});
 
+  static final StreamController<String> onPortKilled =
+      StreamController<String>.broadcast();
   @override
   State<SystemLogger> createState() => _SystemLoggerState();
 }
 
 class _SystemLoggerState extends State<SystemLogger>
     with AutomaticKeepAliveClientMixin {
+
   final SystemService _systemService = SystemService();
+  final FlowerService _flowerService = FlowerService();
+
   @override
   bool get wantKeepAlive => true;
 
   void _showKillDialog() {
     String? selectedPort; // Variable to store the selection
-
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -27,9 +35,10 @@ class _SystemLoggerState extends State<SystemLogger>
           return AlertDialog(
             title: const Text('Select Ports'),
             content: DropdownMenu<String>(
+              width: 230,
               dropdownMenuEntries: const [
-                DropdownMenuEntry(value: '5000', label: 'Flask (5000)'),
-                DropdownMenuEntry(value: '8080', label: 'Flower (8080)'),
+                DropdownMenuEntry(value: 'flask', label: 'Flask'),
+                DropdownMenuEntry(value: 'flower', label: 'Flower'),
                 DropdownMenuEntry(value: 'all', label: 'All Ports'),
               ],
               onSelected: (value) {
@@ -45,14 +54,26 @@ class _SystemLoggerState extends State<SystemLogger>
                 child: const Text('Cancel'),
               ),
               ElevatedButton(
-                onPressed: () {
-                  // 1. Only execute if selectedPort is NOT null (not empty)
-                  if (selectedPort != null) {
-                    _killPorts(selectedPort!);
-                    Navigator.pop(context);
-                  }
-                  // 2. If it is null, this button does nothing
-                },
+                onPressed: selectedPort != null
+                    ? () {
+                        // Only execute if selectedPort is NOT null (not empty)
+                        if (selectedPort == 'all') {
+                          _systemService.killPort(ApiService.currentPort);
+                          SystemLogger.onPortKilled.add('flask');
+                          _flowerService.stopProcess();
+                          _systemService.killPort(FlowerService.activeServerPort);
+                          SystemLogger.onPortKilled.add('flower');
+                        } else if (selectedPort == 'flower') {
+                          _flowerService.stopProcess();
+                          _systemService.killPort(FlowerService.activeServerPort);
+                          SystemLogger.onPortKilled.add('flower');
+                        } else {
+                          _systemService.killPort(ApiService.currentPort);
+                          SystemLogger.onPortKilled.add('flask');
+                        }
+                        Navigator.pop(context);
+                      }
+                    : null, // If it is null, this button does nothing
                 child: const Text('Confirm'),
               ),
             ],
@@ -60,15 +81,6 @@ class _SystemLoggerState extends State<SystemLogger>
         },
       ),
     );
-  }
-
-  void _killPorts(String port) {
-    if (port == 'all') {
-      _systemService.killPort(5000);
-      _systemService.killPort(8080);
-    } else {
-      _systemService.killPort(int.parse(port));
-    }
   }
 
   @override
@@ -93,11 +105,13 @@ class _SystemLoggerState extends State<SystemLogger>
             Divider(),
 
             // Terminal area
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: SizedBox(
-                height: 240,
-                child: ConsoleWidget(logStream: AppLogger.systemStream),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(25),
+                child: SizedBox(
+                  height: 240,
+                  child: ConsoleWidget(logStream: AppLogger.systemStream),
+                ),
               ),
             ),
           ],

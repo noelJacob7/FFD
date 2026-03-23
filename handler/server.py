@@ -2,6 +2,7 @@ import flwr as fl
 import numpy as np
 from keras.models import load_model
 import json
+import argparse
 from sklearn.metrics import (
     accuracy_score,
     precision_score,
@@ -36,12 +37,13 @@ def fit_config(server_round: int):
 
 
 class SaveBestPRStrategy(fl.server.strategy.FedAvg):
-    def __init__(self, model, X_test, y_test, *args, **kwargs):
+    def __init__(self, model, X_test, y_test, flask_port, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.model = model
         self.X_test = X_test
         self.y_test = y_test
         self.best_prauc = conf_data["pr_auc"]
+        self.flask_port = flask_port # type: ignore
 
     def aggregate_fit(self, server_round, results, failures):
 
@@ -81,7 +83,7 @@ class SaveBestPRStrategy(fl.server.strategy.FedAvg):
         print(f"PR-AUC:    {pr_auc}")
         print("====================================\n")
 
-        # Update metrices dictionary
+        # Update metrics dictionary
         try:
             payload = {
                 "round": server_round,
@@ -91,30 +93,51 @@ class SaveBestPRStrategy(fl.server.strategy.FedAvg):
                 "f1_score": float(f1),
                 "pr_auc": float(pr_auc),
             }
-            # Sending to your existing Flask app running on 5000
+            # --- UPDATED: Use dynamic flask_port ---
             requests.post(
-                "http://localhost:5000/update_metrics", json=payload, timeout=2
+                f"http://localhost:{self.flask_port}/update_metrics",
+                json=payload,
+                timeout=2,
             )
         except Exception as e:
-            print(f"Flask update failed (is the API running?): {e}")
+            print(
+                f"Flask update failed (is the API running on port {self.flask_port}?): {e}"
+            )
 
         if pr_auc > self.best_prauc:
             try:
                 self.best_prauc = pr_auc
                 self.model.save("models/best_federated_model.keras")
                 print("Saved new best model")
+                # --- UPDATED: Use dynamic flask_port ---
                 requests.post(
-                    "http://localhost:5000/update_saved_metrics",
+                    f"http://localhost:{self.flask_port}/update_saved_metrics",
                     json={"threshold": threshold, "pr_auc": pr_auc},
                     timeout=2,
                 )
             except Exception as e:
-                 print(f"Flask update failed (is the API running?): {e}")
-                 
+                print(
+                    f"Flask update failed (is the API running on port {self.flask_port}?): {e}"
+                )
+
         return aggregated_parameters, aggregated_metrics
 
 
 if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(description="Start the Federated Learning Server.")
+
+    parser.add_argument(
+        "--port", type=int, default=8080, help="Port to run the Flower server on"
+    )
+    parser.add_argument(
+        "--flask-port",
+        type=int,
+        default=5000,
+        help="Port where the Flask API is running",
+    )
+    args = parser.parse_args()
+
     try:
         data = np.load("data/test_sequences.npz")
         X_test = data["X"]
@@ -127,6 +150,7 @@ if __name__ == "__main__":
         model=model,
         X_test=X_test,
         y_test=y_test,
+        flask_port=args.flask_port,  # Pass the port to the strategy
         fraction_fit=1.0,
         min_fit_clients=2,
         min_available_clients=2,
@@ -134,8 +158,10 @@ if __name__ == "__main__":
         on_fit_config_fn=fit_config,
     )
 
+    print(f"Starting Flower server on port {args.port}...")
+
     fl.server.start_server(
-        server_address="localhost:8080",
+        server_address=f"localhost:{args.port}",  # Use dynamic server port
         config=fl.server.ServerConfig(num_rounds=5),
         strategy=strategy,
     )

@@ -4,6 +4,7 @@ import numpy as np
 import random
 from keras.models import load_model
 import os
+import argparse
 
 from sklearn.metrics import (
     accuracy_score,
@@ -86,7 +87,7 @@ def update_threshold():
             conf_data = json.load(conf)
         conf_data["threshold"] = FEDERATED_THRESHOLD
         conf_data["pr_auc"] = pr_auc
-        
+
         with open("federated_model_config.json", "w") as conf_file:
             json.dump(conf_data, conf_file, indent=2)
         print(f"Updated threshold to: {FEDERATED_THRESHOLD}")
@@ -218,22 +219,33 @@ def get_evaluation_metrics():
         return jsonify({"error": str(e)}), 500
 
 
-@app.get('/get_data_files')
+@app.get("/get_data_files")
 def get_files():
     try:
         script_dir = os.path.dirname(os.path.abspath(__file__))
-        
-        models_path = os.path.join(script_dir, 'data')
-        files = os.listdir(models_path)
-        data_files = [file for file in files if file.endswith('.npz')]
-        print(f"Filtered .npz files: {data_files}")
-        
-        return jsonify(data_files), 200
-        
-    except Exception as e:
-        return jsonify({'error': {e}}), 500
-        
-        
-if __name__ == "__main__":
 
-    app.run(host="0.0.0.0", port=5000)
+        models_path = os.path.join(script_dir, "data")
+        files = os.listdir(models_path)
+        data_files = [file for file in files if file.endswith(".npz")]
+        print(f"Filtered .npz files: {data_files}")
+
+        return jsonify(data_files), 200
+
+    except Exception as e:
+        return jsonify({"error": {e}}), 500
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Run the Federated Learning Flask Handler."
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=5000,
+        help="The port number to run the Flask API on.",
+    )
+    args = parser.parse_args()
+    print(f"Starting Flask API on port {args.port}...")
+
+    app.run(host="0.0.0.0", port=args.port)

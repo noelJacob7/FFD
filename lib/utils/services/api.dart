@@ -9,16 +9,20 @@ import 'data_manager.dart';
 
 class ApiService {
   Process? _process;
-  final String _baseUrl = 'http://localhost:5000';
+  static int _currentPort = 5000;
 
-  Future<void> startServer() async {
+  static int get currentPort => _currentPort;
+  String get _baseUrl => 'http://localhost:$_currentPort';
+
+  Future<void> startServer(int port) async {
+    _currentPort = port;
     try {
-      String dir = SystemService().findHandlerDir();
+      String dir = SystemService().getHandlerDir();
       print(dir);
 
       _process = await Process.start(
         'python3',
-        ['-u', 'app.py'],
+        ['-u', 'app.py', '--port', _currentPort.toString()],
         runInShell: true,
         workingDirectory: dir,
       );
@@ -222,9 +226,6 @@ class ApiService {
   Future<void> stopServer() async {
     _process?.kill();
     _process = null;
+    SystemService().killPort(currentPort);
   }
-}
-
-void main() {
-  ApiService().startServer();
 }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../common/consoles/flask_logger.dart';
-import 'flower_logger.dart';
-import '../common/consoles/system_logger.dart';
+import '../common/consoles/flask_console.dart';
+import 'flower_server.dart';
+import '../common/consoles/system_console.dart';
 
 class GlobalLogger extends StatelessWidget {
   const GlobalLogger({super.key});

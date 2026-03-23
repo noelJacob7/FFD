@@ -1,9 +1,9 @@
+import 'package:fl_fraud_detection/common/consoles/system_console.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 
 import '../../utils/console.dart';
 import '../../utils/logging.dart';
-import '../../utils/services/system.dart';
 import '../../utils/services/flower.dart';
 import '../../utils/services/api.dart';
 
@@ -18,7 +18,7 @@ class _ClientFlowerState extends State<ClientFlower>
     with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
-  StreamSubscription<int>? _portStatusSubscription;
+  StreamSubscription<String>? _portStatusSubscription;
 
   final flowerService = FlowerService();
   String _status = 'Idle';
@@ -29,10 +29,10 @@ class _ClientFlowerState extends State<ClientFlower>
     // final systemService = SystemService();
     // systemService.killPort(8080);
 
-    _portStatusSubscription = SystemService.onPortKilled.stream.listen((
+    _portStatusSubscription = SystemLogger.onPortKilled.stream.listen((
       killedPort,
     ) {
-      if (killedPort == 8080 && mounted) {
+      if (killedPort == 'flower' && mounted) {
         setState(() {
           _status = 'Idle';
         });
@@ -49,8 +49,6 @@ class _ClientFlowerState extends State<ClientFlower>
   Future<(String, String)?> _showDialog() async {
     return await showDialog<(String, String)>(
       context: context,
-      // Prevents dismissing by clicking outside, forcing them to use Cancel/Connect
-      barrierDismissible: false,
       builder: (context) => const DatasetSelectionDialog(),
     );
   }
@@ -66,7 +64,11 @@ class _ClientFlowerState extends State<ClientFlower>
     final clientDataset = result.$1;
     final serverUrl = result.$2;
 
-    await flowerService.startClient(clientDataset, serverUrl);
+    await flowerService.startClient(
+      clientDataset,
+      serverUrl,
+      ApiService.currentPort,
+    );
 
     setState(() {
       _status = "Running";
@@ -172,7 +174,22 @@ class _DatasetSelectionDialogState extends State<DatasetSelectionDialog> {
                 else ...[
                   const SizedBox(height: 20),
                   const Text(
-                    "1. Select Dataset:",
+                    "1. Server Connection:",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _urlController,
+                    decoration: const InputDecoration(
+                      labelText: 'ngrok URL (or leave blank for local)',
+                      hintText: 'e.g., tcp://0.tcp.ngrok.io:14321',
+                      border: OutlineInputBorder(),
+                      isDense: true, // Makes the text field slightly less bulky
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    "2. Select Dataset:",
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
@@ -197,21 +214,6 @@ class _DatasetSelectionDialogState extends State<DatasetSelectionDialog> {
                     },
                   ),
                 ],
-                const SizedBox(height: 24),
-                const Text(
-                  "2. Server Connection:",
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _urlController,
-                  decoration: const InputDecoration(
-                    labelText: 'ngrok URL (or leave blank for local)',
-                    hintText: 'e.g., tcp://0.tcp.ngrok.io:14321',
-                    border: OutlineInputBorder(),
-                    isDense: true, // Makes the text field slightly less bulky
-                  ),
-                ),
               ],
             ),
 

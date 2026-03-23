@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../common/consoles/flask_logger.dart';
-import 'flower_console.dart';
-import '../common/consoles/system_logger.dart';
+import '../common/consoles/flask_console.dart';
+import 'flower_client.dart';
+import '../common/consoles/system_console.dart';
 
 class ClientConsoles extends StatelessWidget {
   const ClientConsoles({super.key});

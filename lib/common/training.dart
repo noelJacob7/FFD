@@ -4,7 +4,7 @@ import 'package:fl_chart/fl_chart.dart';
 
 // import 'package:fl_fraud_detection/utils/logging.dart';
 import 'package:fl_fraud_detection/utils/services/api.dart';
-import 'package:fl_fraud_detection/utils/services/flower.dart';
+// import 'package:fl_fraud_detection/utils/services/flower.dart';
 import 'package:fl_fraud_detection/utils/metrics_charts.dart';
 
 class TrainingPage extends StatefulWidget {
@@ -153,7 +153,6 @@ class _TrainingPageState extends State<TrainingPage> {
       if (response.containsKey("metrics")) {
         var metrics = response["metrics"];
 
-        // 1. Check if we've reached the final round (5) to stop the timer
         List<dynamic> rounds = metrics["Round"];
         if (rounds.length >= 5) {
           _stopFetchingMetrics();

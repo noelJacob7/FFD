@@ -1,9 +1,11 @@
+import 'package:fl_fraud_detection/common/consoles/system_console.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 
 import '../utils/console.dart';
 import '../utils/logging.dart';
 import '../utils/services/flower.dart';
+import '../utils/services/api.dart';
 import '../utils/services/system.dart';
 
 class FlowerServer extends StatefulWidget {
@@ -17,9 +19,9 @@ class _FlowerServerState extends State<FlowerServer>
     with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
-  StreamSubscription<int>? _portStatusSubscription;
+  StreamSubscription<String>? _portStatusSubscription;
 
-  final flowerService = FlowerService();
+  final _flowerService = FlowerService();
   String _status = 'Idle';
 
   @override
@@ -28,10 +30,10 @@ class _FlowerServerState extends State<FlowerServer>
     final systemService = SystemService();
     systemService.killPort(8080);
 
-    _portStatusSubscription = SystemService.onPortKilled.stream.listen((
+    _portStatusSubscription = SystemLogger.onPortKilled.stream.listen((
       killedPort,
     ) {
-      if (killedPort == 8080 && mounted) {
+      if (killedPort == 'flower' && mounted) {
         setState(() {
           _status = 'Idle';
         });
@@ -42,16 +44,20 @@ class _FlowerServerState extends State<FlowerServer>
   @override
   void dispose() {
     _portStatusSubscription?.cancel();
+    _flowerService.stopProcess();
     super.dispose();
   }
 
   void _startServer() async {
-    await flowerService.startServer();
+    await _flowerService.startServer(8080, ApiService.currentPort);
     ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('To connect clients open a public tcp port using \'ngrok tcp 8080\'')
+      SnackBar(
+        content: SelectableText(
+          'To connect clients open a public tcp port using \'ngrok tcp 8080\'',
         ),
-      );
+        duration: Duration(seconds: 7),
+      ),
+    );
     setState(() {
       _status = "Running";
     });
