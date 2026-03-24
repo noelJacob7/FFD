@@ -1,18 +1,24 @@
 class SequenceData {
-  final String id; // e.g., "sequence_42"
-  final List<dynamic> features;
+  final String id;
   final int label;
+  final List<List<double>> features; // 2D Array: [time_steps][features]
 
-  SequenceData({required this.id, required this.features, required this.label});
+  SequenceData({
+    required this.id,
+    required this.label,
+    required this.features,
+  });
 
-  // Factory constructor to easily build this object from JSON
   factory SequenceData.fromJson(String id, Map<String, dynamic> json) {
     return SequenceData(
       id: id,
-      // features will be a List<dynamic>. If it's a 2D array (e.g., for LSTMs),
-      // it handles nested lists automatically.
-      features: json['features'] as List<dynamic>,
       label: json['label'] as int,
+      // Safely map the nested lists
+      features: (json['features'] as List)
+          .map((timeStep) => (timeStep as List)
+              .map((val) => (val as num).toDouble())
+              .toList())
+          .toList(),
     );
   }
 }

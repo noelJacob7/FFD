@@ -1,6 +1,9 @@
 import "package:flutter/material.dart";
+import 'dart:math';
+
 import '../utils/services/api.dart';
 import '../utils/services/data_manager.dart';
+import '../utils/metrics_charts.dart';
 
 class DetectionPage extends StatefulWidget {
   const DetectionPage({super.key});
@@ -75,6 +78,10 @@ class _DetectionPageState extends State<DetectionPage> {
   }
 
   Widget _buildResultCard() {
+    if (_selectedSequence == null || _predictionResult == null) {
+      return const SizedBox.shrink();
+    }
+
     double prob = _predictionResult!['predicted_probability'] ?? 0.0;
     prob *= 100;
     final Color color = prob > 50 ? Colors.redAccent : Colors.greenAccent;
@@ -133,6 +140,159 @@ class _DetectionPageState extends State<DetectionPage> {
     );
   }
 
+  Widget _buildFingerprintCard() {
+    if (_selectedSequence == null || _predictionResult == null) {
+      return const SizedBox.shrink();
+    }
+
+    // 1. This is now a List<List<double>> (20 time steps, 30 features)
+    final List<List<double>> sequence = _selectedSequence!.features;
+
+    // 2. Flatten temporarily JUST to calculate the overall metrics
+    final List<double> allValues = sequence.expand((step) => step).toList();
+
+    final double peak = allValues
+        .map((e) => e.abs())
+        .reduce((a, b) => max(a, b));
+    final double magnitude = allValues
+        .map((e) => e.abs())
+        .reduce((a, b) => a + b);
+
+    final double mean = allValues.reduce((a, b) => a + b) / allValues.length;
+    final double volatility =
+        allValues.map((e) => pow(e - mean, 2)).reduce((a, b) => a + b) /
+        allValues.length;
+
+    // 3. Compress the 20x30 matrix into a 30-bar signature for the chart
+    // We find the highest spike (positive or negative) for each of the 30 features
+    int numFeatures = sequence.isNotEmpty ? sequence.first.length : 0;
+    List<double> signatureSpikes = List.generate(numFeatures, (featureIndex) {
+      double maxSpike = 0.0;
+      for (int t = 0; t < sequence.length; t++) {
+        if (sequence[t][featureIndex].abs() > maxSpike.abs()) {
+          maxSpike =
+              sequence[t][featureIndex]; // Keep the sign for visual up/down
+        }
+      }
+      return maxSpike;
+    });
+
+    double prob = _predictionResult!['predicted_probability'] ?? 0.0;
+    final Color themeColor = prob > 0.5 ? Colors.redAccent : Colors.cyanAccent;
+
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      color: const Color(
+        0xFF161616,
+      ), // Extra dark to contrast with the prediction card
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.grey[800]!),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // --- LEFT SIDE: Metrics ---
+            Expanded(
+              flex: 2,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "TRANSACTION FINGERPRINT",
+                    style: TextStyle(
+                      color: Colors.white54,
+                      fontSize: 10,
+                      letterSpacing: 1.5,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildFingerprintStat(
+                    "Peak Anomaly",
+                    peak.toStringAsFixed(3),
+                  ),
+                  _buildFingerprintStat(
+                    "Volatility",
+                    volatility.toStringAsFixed(3),
+                  ),
+                  _buildFingerprintStat(
+                    "Magnitude",
+                    magnitude.toStringAsFixed(2),
+                  ),
+                  _buildFingerprintStat(
+                    "Components",
+                    "${signatureSpikes.length} Data Points",
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(width: 20),
+
+            // --- RIGHT SIDE: The Spike Graph (Using MetricsCharts) ---
+            Expanded(
+              flex: 3,
+              child: SizedBox(
+                height: 140, // Enough height to see the top and bottom spikes
+                child: MetricsCharts.buildFingerprintChart(
+                  signatureSpikes,
+                  themeColor,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Helper for the metrics text layout
+  Widget _buildFingerprintStat(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(color: Colors.white70, fontSize: 13),
+          ),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontFamily:
+                  'monospace', // Monospace fonts look great for raw data
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPlaceholderState() {
+    return Padding(
+      padding: const EdgeInsets.all(32.0),
+      child: Column(
+        children: [
+          Icon(Icons.analytics_outlined, size: 40, color: Colors.grey[800]),
+          const SizedBox(height: 16),
+          Text(
+            _selectedSequence == null
+                ? "Select a sequence from the dropdown above to begin."
+                : "Sequence ${_selectedSequence!.id} selected.\nHit 'Run Fraud Detection' to view results.",
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 12),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -179,13 +339,33 @@ class _DetectionPageState extends State<DetectionPage> {
                 ),
               ),
 
-              const SizedBox(height: 50),
+              const SizedBox(height: 100),
 
-              if (_predictionResult != null)
-                Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: _buildResultCard(),
+              // ADDED: The Section Header
+              const Text(
+                "-- PREDICTION RESULTS --",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 2.0,
+                  fontSize: 20,
                 ),
+              ),
+              const SizedBox(height: 20),
+
+              // Display the placeholder if no results exist yet
+              if (_predictionResult == null) ...[
+                SizedBox(height: 100),
+                _buildPlaceholderState(),
+              ],
+
+              // Display the actual results if they exist
+              if (_predictionResult != null) ...[
+                const SizedBox(height: 20),
+                _buildResultCard(),
+                const SizedBox(height: 20),
+                _buildFingerprintCard(),
+              ],
+              const SizedBox(height: 40),
             ],
           ),
         ),
@@ -227,6 +407,7 @@ class _DetectionPageState extends State<DetectionPage> {
             _searchController.clear();
             setState(() {
               _selectedSequence = null;
+              _predictionResult = null;
             });
             _searchController.closeView('');
           },
@@ -247,6 +428,24 @@ class _DetectionPageState extends State<DetectionPage> {
         );
       },
       suggestionsBuilder: (context, controller) async {
+        if (_sequencesFuture == null) {
+          return [
+            SizedBox(height: 30),
+            const Padding(
+              padding: EdgeInsets.all(32.0),
+              child: Center(
+                child: Text(
+                  'Hit the refresh icon above to load sequences from the server.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.black54,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ),
+            ),
+          ];
+        }
         try {
           final sequences = await (_sequencesFuture ?? Future.value([]));
 

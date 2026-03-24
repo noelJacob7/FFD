@@ -62,7 +62,14 @@ class _EvaluationPageState extends State<EvaluationPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Select TWO Models To Evaluate"),
+        title: const Text(
+                "-- SELECT TWO MODELS TO EVALUATE --",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 2.0,
+                  fontSize: 20,
+                ),
+              ),
         centerTitle: true,
       ),
       body: SingleChildScrollView(

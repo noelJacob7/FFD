@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'dart:math';
 
 class MetricsCharts {
   // 1. Helper to create consistent line styling
@@ -296,6 +297,44 @@ class MetricsCharts {
             );
           }).toList(),
         ),
+      ),
+    );
+  }
+  static Widget buildFingerprintChart(List<double> features, Color themeColor) {
+    return BarChart(
+      BarChartData(
+        // Ensure the chart centers at zero properly based on the data
+        minY: features.reduce(min) - 1, 
+        maxY: features.reduce(max) + 1,
+        gridData: const FlGridData(show: false),
+        titlesData: const FlTitlesData(show: false),
+        borderData: FlBorderData(show: false),
+        barTouchData: BarTouchData(enabled: false), // Clean look, no hover
+
+        extraLinesData: ExtraLinesData(
+          horizontalLines: [
+            HorizontalLine(
+              y: 0, // Centers the line perfectly at zero
+              color: Colors.white24, // A subtle, semi-transparent white
+              strokeWidth: 1.5,
+              dashArray: [5, 5], // Creates a sleek dashed line effect
+            ),
+          ],
+        ),
+        
+        barGroups: features.asMap().entries.map((entry) {
+          return BarChartGroupData(
+            x: entry.key,
+            barRods: [
+              BarChartRodData(
+                toY: entry.value,
+                color: themeColor,
+                width: 4, // Thin bars for the barcode/equalizer look
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ],
+          );
+        }).toList(),
       ),
     );
   }
