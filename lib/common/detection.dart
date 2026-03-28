@@ -16,17 +16,12 @@ class _DetectionPageState extends State<DetectionPage> {
   final SearchController _searchController = SearchController();
   final ApiService _apiService = ApiService();
 
-  SequenceData? _selectedSequence;
+  SequenceData? selectedSequence;
+  String predictionModel = 'production_model.keras';
   bool _isLoading = false;
   Map<String, dynamic>? _predictionResult;
 
   Future<List<SequenceData>>? _sequencesFuture;
-
-  // @override
-  // void initState() {
-  //   super.initState();
-  //   _fetchSequences();
-  // }
 
   void _fetchSequences() {
     setState(() {
@@ -38,7 +33,7 @@ class _DetectionPageState extends State<DetectionPage> {
   }
 
   void _handleDetection() async {
-    if (_selectedSequence == null) return;
+    if (selectedSequence == null) return;
 
     setState(() {
       _isLoading = true;
@@ -48,14 +43,15 @@ class _DetectionPageState extends State<DetectionPage> {
     try {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Detecting fraud for sequence ${_selectedSequence!.id}',
-          ),
+          content: Text('Detecting fraud for sequence ${selectedSequence!.id}'),
           duration: const Duration(seconds: 2),
         ),
       );
 
-      final result = await _apiService.runPrediction(_selectedSequence!.id);
+      final result = await _apiService.runPrediction(
+        predictionModel,
+        selectedSequence!.id,
+      );
 
       setState(() {
         _predictionResult = result;
@@ -77,8 +73,81 @@ class _DetectionPageState extends State<DetectionPage> {
     }
   }
 
+  void _showSettingsDialog() async {
+    // 1. You might want a loading spinner here, but assuming it fetches fast:
+    final _models = await _apiService.getModels();
+
+    // 2. Safety Check: If our current predictionModel is NOT in the fetched list,
+    // default to the first item in the list (if the list isn't empty) to prevent a crash.
+    if (_models.isNotEmpty && !_models.contains(predictionModel)) {
+      predictionModel = _models.first;
+    }
+
+    if (mounted) {
+      showDialog(
+        context: context,
+        builder: (context) {
+          // 3. StatefulBuilder allows the dialog to redraw itself when you change the dropdown
+          return StatefulBuilder(
+            builder: (context, setDialogState) {
+              return AlertDialog(
+                title: const Text('Detection Settings'),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Fixed the inverted logic here
+                    if (_models.isEmpty)
+                      const Text('No models available on server.')
+                    else ...[
+                      SizedBox(height: 10),
+                      const Text(
+                        'The system defaults to the latest deployed federated model.\nYou can manually select an older version below.',
+                        style: TextStyle(fontSize: 14, color: Colors.black54),
+                      ),
+                      DropdownButton<String>(
+                        isExpanded: true,
+                        focusColor: Colors.transparent,
+                        dropdownColor: const Color.fromARGB(255, 234, 229, 234),
+                        value: predictionModel,
+                        hint: const Text("Select a model"),
+                        items: _models.map((String fileName) {
+                          return DropdownMenuItem<String>(
+                            value: fileName,
+                            child: Text(fileName),
+                          );
+                        }).toList(),
+                        onChanged: (String? newValue) {
+                          if (newValue != null) {
+                            // Update the dialog's UI
+                            setDialogState(() {
+                              predictionModel = newValue;
+                            });
+                            // Also update the parent page's memory
+                            setState(() {
+                              predictionModel = newValue;
+                            });
+                          }
+                        },
+                      ),
+                    ],
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Apply'),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      );
+    }
+  }
+
   Widget _buildResultCard() {
-    if (_selectedSequence == null || _predictionResult == null) {
+    if (selectedSequence == null || _predictionResult == null) {
       return const SizedBox.shrink();
     }
 
@@ -141,12 +210,12 @@ class _DetectionPageState extends State<DetectionPage> {
   }
 
   Widget _buildFingerprintCard() {
-    if (_selectedSequence == null || _predictionResult == null) {
+    if (selectedSequence == null || _predictionResult == null) {
       return const SizedBox.shrink();
     }
 
     // 1. This is now a List<List<double>> (20 time steps, 30 features)
-    final List<List<double>> sequence = _selectedSequence!.features;
+    final List<List<double>> sequence = selectedSequence!.features;
 
     // 2. Flatten temporarily JUST to calculate the overall metrics
     final List<double> allValues = sequence.expand((step) => step).toList();
@@ -282,9 +351,9 @@ class _DetectionPageState extends State<DetectionPage> {
           Icon(Icons.analytics_outlined, size: 40, color: Colors.grey[800]),
           const SizedBox(height: 16),
           Text(
-            _selectedSequence == null
+            selectedSequence == null
                 ? "Select a sequence from the dropdown above to begin."
-                : "Sequence ${_selectedSequence!.id} selected.\nHit 'Run Fraud Detection' to view results.",
+                : "Sequence ${selectedSequence!.id} selected.\nHit 'Run Fraud Detection' to view results.",
             textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 12),
           ),
@@ -315,27 +384,66 @@ class _DetectionPageState extends State<DetectionPage> {
 
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 30),
-                child: FilledButton.icon(
-                  onPressed: (_selectedSequence == null || _isLoading)
-                      ? null
-                      : _handleDetection,
-                  icon: _isLoading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.bolt),
-                  label: Text(
-                    _isLoading ? 'Processing...' : 'Run Fraud Detection',
-                  ),
-                  style: FilledButton.styleFrom(
-                    shadowColor: Colors.grey,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: FilledButton.icon(
+                        onPressed: (selectedSequence == null || _isLoading)
+                            ? null
+                            : _handleDetection,
+                        icon: _isLoading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.bolt),
+                        label: Text(
+                          _isLoading ? 'Processing...' : 'Run Fraud Detection',
+                        ),
+                        style: FilledButton.styleFrom(
+                          shadowColor: Colors.grey,
+                          // Rounded on the left, completely flat on the right
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.horizontal(
+                              left: Radius.circular(8),
+                              right: Radius.zero,
+                            ),
+                          ),
+                          minimumSize: const Size(0, 60),
+                        ),
+                      ),
                     ),
-                    minimumSize: const Size(double.infinity, 60),
-                  ),
+
+                    const SizedBox(width: 1),
+
+                    // --- RIGHT SIDE: Settings Action ---
+                    FilledButton(
+                      // Ensure the button enables/disables at the exact same time as the main button
+                      onPressed: (selectedSequence == null || _isLoading)
+                          ? null
+                          : _showSettingsDialog,
+                      style: FilledButton.styleFrom(
+                        shadowColor: Colors.grey,
+                        padding:
+                            EdgeInsets.zero, // Removes default text padding
+                        // Flat on the left, rounded on the right
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.horizontal(
+                            left: Radius.zero,
+                            right: Radius.circular(8),
+                          ),
+                        ),
+                        minimumSize: const Size(
+                          60,
+                          60,
+                        ), // Forces a perfect square
+                      ),
+                      child: const Icon(Icons.settings),
+                    ),
+                  ],
                 ),
               ),
 
@@ -406,7 +514,7 @@ class _DetectionPageState extends State<DetectionPage> {
           onPressed: () {
             _searchController.clear();
             setState(() {
-              _selectedSequence = null;
+              selectedSequence = null;
               _predictionResult = null;
             });
             _searchController.closeView('');
@@ -472,7 +580,7 @@ class _DetectionPageState extends State<DetectionPage> {
               subtitle: Text('Original Label: ${data.label}'),
               onTap: () {
                 setState(() {
-                  _selectedSequence = data;
+                  selectedSequence = data;
                   _predictionResult = null;
                   _searchController.closeView(data.id);
                 });
@@ -494,7 +602,7 @@ class _DetectionPageState extends State<DetectionPage> {
                   ),
                   const SizedBox(height: 16),
                   const Text(
-                    'Failed to load sequences.\nPlease check your connection.\n\nClick the refresh button above to try again.',
+                    'Failed to load sequences.\nPlease check your API connection.\n\nClick the refresh button above to try again.',
                     textAlign: TextAlign.center,
                     style: TextStyle(color: Colors.black),
                   ),

@@ -207,7 +207,7 @@ class _EvaluationPageState extends State<EvaluationPage> {
                         fontSize: 12,
                       ),
                     ),
-                    dense: true, // Makes the rows more compact
+                    // dense: true, // Makes the rows more compact
                     onTap: () {
                       setState(() {
                         onSelect(model);

@@ -140,6 +140,7 @@ def get_training_metrics():
 def predict():
     # Get the sequence ID from the request (e.g., /predict?id=sequence_42)
     seq_id = request.args.get("id")
+    model = request.args.get("model", "production_model.keras")
 
     if X_DATA is None or seq_id is None:
         return jsonify({"error": "Data or ID missing"}), 400
@@ -150,7 +151,7 @@ def predict():
         test_data = X_DATA[idx : idx + 1]
         y_true = int(y_DATA[idx])
 
-        model = load_model("models/best_federated_model.keras")
+        model = load_model(f"models/{model}")
         y_pred_prob = model.predict(test_data, verbose=0)
         y_pred_label = int(y_pred_prob[0][0] > FEDERATED_THRESHOLD)
 

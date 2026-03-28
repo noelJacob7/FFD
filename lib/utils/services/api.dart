@@ -124,11 +124,19 @@ class ApiService {
   }
 
   // The Detection Function
-  Future<Map<String, dynamic>> runPrediction(String sequenceId) async {
+  Future<Map<String, dynamic>> runPrediction(
+    String predictionModel,
+    String sequenceId,
+  ) async {
     try {
+      final encodedModelName = Uri.encodeComponent(predictionModel);
       // Pass the ID to Flask so it knows which sequence to load from X_DATA
       final response = await http
-          .get(Uri.parse('$_baseUrl/predict?id=$sequenceId'))
+          .get(
+            Uri.parse(
+              '$_baseUrl/predict?model=$encodedModelName&id=$sequenceId',
+            ),
+          )
           .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
