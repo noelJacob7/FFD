@@ -213,7 +213,7 @@ def get_evaluation_metrics():
             "F1 Score": round(f1_score(y_DATA, y_pred), 6),
             "PR_AUC": round(calculated_pr_auc, 6),  # <--- USE THE CALCULATED VALUE HERE
         }
-
+        print(f"Evaluation metrics for {model_name}: {metrics}")
         return jsonify(metrics), 200
 
     except Exception as e:

@@ -153,7 +153,7 @@ class _DetectionPageState extends State<DetectionPage> {
 
     double prob = _predictionResult!['predicted_probability'] ?? 0.0;
     prob *= 100;
-    final Color color = prob > 50 ? Colors.redAccent : Colors.greenAccent;
+    final Color color = prob > 50 ? Colors.redAccent : const Color.fromARGB(255, 115, 205, 162);
 
     return Card(
       margin: const EdgeInsets.all(20),
@@ -247,7 +247,7 @@ class _DetectionPageState extends State<DetectionPage> {
     });
 
     double prob = _predictionResult!['predicted_probability'] ?? 0.0;
-    final Color themeColor = prob > 0.5 ? Colors.redAccent : Colors.cyanAccent;
+    final Color themeColor = prob > 0.5 ? Colors.redAccent : const Color.fromARGB(255, 115, 205, 162);
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
